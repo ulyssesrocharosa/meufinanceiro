@@ -32,9 +32,26 @@ SYSTEM_CATEGORIES = [
 ]
 
 
+def _migrate(conn) -> None:
+    """Aplica colunas novas em tabelas já existentes (idempotente)."""
+    migrations = [
+        "ALTER TABLE profiles ADD COLUMN notif_bill_hour INTEGER DEFAULT 8",
+        "ALTER TABLE profiles ADD COLUMN notif_budget_hour INTEGER DEFAULT 9",
+    ]
+    for sql in migrations:
+        try:
+            conn.execute(sql)
+            conn.commit()
+        except Exception:
+            pass  # coluna já existe
+
+
 def seed():
     print("Criando tabelas...")
     Base.metadata.create_all(bind=engine)
+
+    with engine.connect() as conn:
+        _migrate(conn)
 
     db = SessionLocal()
     try:
