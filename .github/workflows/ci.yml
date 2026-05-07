@@ -3,6 +3,7 @@ name: CI
 on:
   push:
     branches: [main]
+    tags: ["v*"]
   pull_request:
     branches: [main]
 
@@ -45,7 +46,7 @@ jobs:
     name: Publicar imagem no GHCR
     runs-on: ubuntu-latest
     needs: test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
     permissions:
       contents: read
       packages: write
@@ -60,11 +61,19 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Extrair metadados da imagem
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/ulyssesrocharosa/financeiropython
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=semver,pattern={{raw}}
+            type=sha,prefix=
+
       - name: Build e push da imagem
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
-          tags: |
-            ghcr.io/ulyssesrocharosa/financeiropython:latest
-            ghcr.io/ulyssesrocharosa/financeiropython:${{ github.sha }}
+          tags: ${{ steps.meta.outputs.tags }}
