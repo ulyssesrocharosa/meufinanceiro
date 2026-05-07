@@ -12,6 +12,7 @@ services:
       EVOLUTION_API_URL: ${EVOLUTION_API_URL}
       EVOLUTION_API_KEY: ${EVOLUTION_API_KEY}
       EVOLUTION_INSTANCE: ${EVOLUTION_INSTANCE}
+      TZ: America/Sao_Paulo
     deploy:
       replicas: 1
       labels:
