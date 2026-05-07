@@ -7,6 +7,8 @@ import os
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from sqlalchemy import text
+
 from app.core.database import SessionLocal, engine
 from app.core.config import settings
 from app.models.models import Base, User, Profile, Category, UserRole, CategoryType
@@ -40,7 +42,7 @@ def _migrate(conn) -> None:
     ]
     for sql in migrations:
         try:
-            conn.execute(sql)
+            conn.execute(text(sql))
             conn.commit()
         except Exception:
             pass  # coluna já existe
