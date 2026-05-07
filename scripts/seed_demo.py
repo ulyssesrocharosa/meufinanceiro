@@ -10,6 +10,7 @@ from sqlalchemy import text
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from app.core.config import settings
 from app.core.database import SessionLocal, engine
 from app.models.models import (
     Base, User, Account, Category, Transaction, Tag, RecurringBill,
@@ -42,7 +43,7 @@ def seed_demo():
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     try:
-        admin = db.query(User).filter_by(email="admin@minhasfinancas.com").first()
+        admin = db.query(User).filter_by(email=settings.admin_email).first()
         if not admin:
             print("ERRO: rode scripts/seed.py primeiro para criar o admin.")
             return
