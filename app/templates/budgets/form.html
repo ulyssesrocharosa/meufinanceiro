@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}{{ "Editar" if budget else "Novo" }} Orçamento — Minhas Finanças{% endblock %}
+{% block page_title %}{{ "Editar Orçamento" if budget else "Novo Orçamento" }}{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto">
+  <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
+    <form method="POST"
+          action="{{ '/budgets/' + budget.id|string + '/edit' if budget else '/budgets' }}"
+          class="space-y-5">
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Categoria *</label>
+        <select name="category_id" required
+                class="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm
+                       dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+          <option value="">Selecione...</option>
+          {% for cat in categories %}
+          <option value="{{ cat.id }}" {% if budget and budget.category_id == cat.id %}selected{% endif %}>
+            {{ cat.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Valor limite *</label>
+        <div class="relative">
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">R$</span>
+          <input type="number" name="amount" step="0.01" min="0.01" required
+                 value="{{ '%.2f'|format(budget.amount) if budget else '' }}"
+                 class="w-full pl-10 pr-4 border border-gray-300 dark:border-gray-600 rounded-xl py-2.5 text-sm
+                        dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Período *</label>
+        <select name="period" required
+                class="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm
+                       dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+          {% set period_labels = {"weekly":"Semanal","monthly":"Mensal","quarterly":"Trimestral","yearly":"Anual"} %}
+          {% for p in periods %}
+          <option value="{{ p }}" {% if budget and budget.period.value == p %}selected{% elif not budget and p == 'monthly' %}selected{% endif %}>
+            {{ period_labels.get(p, p) }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Data início *</label>
+          <input type="date" name="start_date" required
+                 value="{{ budget.start_date.isoformat() if budget else first_day }}"
+                 class="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm
+                        dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Data fim *</label>
+          <input type="date" name="end_date" required
+                 value="{{ budget.end_date.isoformat() if budget else today }}"
+                 class="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm
+                        dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+        </div>
+      </div>
+
+      <div class="flex gap-3 pt-2">
+        <button type="submit"
+                class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-xl text-sm transition-colors">
+          {{ "Salvar" if budget else "Criar orçamento" }}
+        </button>
+        <a href="/budgets"
+           class="flex-1 text-center border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium py-2.5 rounded-xl text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+          Cancelar
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

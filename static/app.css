@@ -1,0 +1,14 @@
+/* Estilos mínimos para complementar Tailwind */
+.sidebar-link.active {
+  background-color: #eef2ff;
+  color: #4338ca;
+}
+
+/* Scrollbar customizada */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
+/* Transições suaves */
+* { transition-property: background-color, border-color, color; transition-duration: 150ms; }

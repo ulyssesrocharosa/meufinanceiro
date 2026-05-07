@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}{{ "Editar" if goal else "Nova" }} Meta — Minhas Finanças{% endblock %}
+{% block page_title %}{{ "Editar Meta" if goal else "Nova Meta" }}{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto">
+  <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
+    <form method="POST"
+          action="{{ '/goals/' + goal.id|string + '/edit' if goal else '/goals' }}"
+          class="space-y-5">
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Nome *</label>
+        <input type="text" name="name" required value="{{ goal.name if goal else '' }}"
+               placeholder="Ex: Viagem para Europa, Fundo de emergência..."
+               class="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm
+                      dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Valor alvo *</label>
+          <div class="relative">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">R$</span>
+            <input type="number" name="target_amount" step="0.01" min="0.01" required
+                   value="{{ '%.2f'|format(goal.target_amount) if goal else '' }}"
+                   class="w-full pl-10 pr-4 border border-gray-300 dark:border-gray-600 rounded-xl py-2.5 text-sm
+                          dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Valor atual</label>
+          <div class="relative">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">R$</span>
+            <input type="number" name="current_amount" step="0.01" min="0"
+                   value="{{ '%.2f'|format(goal.current_amount) if goal else '0.00' }}"
+                   class="w-full pl-10 pr-4 border border-gray-300 dark:border-gray-600 rounded-xl py-2.5 text-sm
+                          dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Data prazo *</label>
+        <input type="date" name="target_date" required
+               value="{{ goal.target_date.isoformat() if goal else '' }}"
+               class="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm
+                      dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Prioridade</label>
+        <select name="priority"
+                class="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm
+                       dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+          {% set prio_labels = {"low":"Baixa","medium":"Média","high":"Alta"} %}
+          {% for p in priorities %}
+          <option value="{{ p }}" {% if goal and goal.priority.value == p %}selected{% elif not goal and p == 'medium' %}selected{% endif %}>
+            {{ prio_labels.get(p, p) }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Conta vinculada</label>
+        <select name="account_id"
+                class="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm
+                       dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+          <option value="">Nenhuma</option>
+          {% for acc in accounts %}
+          <option value="{{ acc.id }}" {% if goal and goal.account_id == acc.id %}selected{% endif %}>
+            {{ acc.name }} (R$ {{ "%.2f"|format(acc.balance) }})
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="flex gap-3 pt-2">
+        <button type="submit"
+                class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-xl text-sm transition-colors">
+          {{ "Salvar" if goal else "Criar meta" }}
+        </button>
+        <a href="/goals"
+           class="flex-1 text-center border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium py-2.5 rounded-xl text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+          Cancelar
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — Minhas Finanças{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+
+<!-- KPI Cards -->
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+
+  <!-- Saldo Total -->
+  <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5">
+    <div class="flex items-center justify-between mb-3">
+      <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Saldo Total</span>
+      <div class="w-9 h-9 bg-indigo-100 dark:bg-indigo-900/40 rounded-xl flex items-center justify-center">
+        <i data-lucide="wallet" class="w-4 h-4 text-indigo-600 dark:text-indigo-400"></i>
+      </div>
+    </div>
+    <p class="text-2xl font-bold {% if total_balance >= 0 %}text-gray-900 dark:text-white{% else %}text-red-600{% endif %}">
+      R$ {{ "%.2f"|format(total_balance) | replace(".", ",") | replace(",", ".", 1) }}
+    </p>
+    <p class="text-xs text-gray-400 mt-1">Todas as contas ativas</p>
+  </div>
+
+  <!-- Receitas do mês -->
+  <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5">
+    <div class="flex items-center justify-between mb-3">
+      <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Receitas do Mês</span>
+      <div class="w-9 h-9 bg-green-100 dark:bg-green-900/40 rounded-xl flex items-center justify-center">
+        <i data-lucide="trending-up" class="w-4 h-4 text-green-600 dark:text-green-400"></i>
+      </div>
+    </div>
+    <p class="text-2xl font-bold text-green-600 dark:text-green-400">
+      R$ {{ "%.2f"|format(month_income) | replace(".", ",") | replace(",", ".", 1) }}
+    </p>
+    <p class="text-xs text-gray-400 mt-1">Mês corrente</p>
+  </div>
+
+  <!-- Despesas do mês -->
+  <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5">
+    <div class="flex items-center justify-between mb-3">
+      <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Despesas do Mês</span>
+      <div class="w-9 h-9 bg-red-100 dark:bg-red-900/40 rounded-xl flex items-center justify-center">
+        <i data-lucide="trending-down" class="w-4 h-4 text-red-600 dark:text-red-400"></i>
+      </div>
+    </div>
+    <p class="text-2xl font-bold text-red-600 dark:text-red-400">
+      R$ {{ "%.2f"|format(month_expense) | replace(".", ",") | replace(",", ".", 1) }}
+    </p>
+    <p class="text-xs text-gray-400 mt-1">Mês corrente</p>
+  </div>
+
+  <!-- Saldo líquido -->
+  <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5">
+    <div class="flex items-center justify-between mb-3">
+      <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Resultado do Mês</span>
+      <div class="w-9 h-9 {% if net >= 0 %}bg-blue-100 dark:bg-blue-900/40{% else %}bg-orange-100 dark:bg-orange-900/40{% endif %} rounded-xl flex items-center justify-center">
+        <i data-lucide="{% if net >= 0 %}plus-circle{% else %}minus-circle{% endif %}"
+           class="w-4 h-4 {% if net >= 0 %}text-blue-600 dark:text-blue-400{% else %}text-orange-600 dark:text-orange-400{% endif %}"></i>
+      </div>
+    </div>
+    <p class="text-2xl font-bold {% if net >= 0 %}text-blue-600 dark:text-blue-400{% else %}text-orange-600 dark:text-orange-400{% endif %}">
+      R$ {{ "%.2f"|format(net) | replace(".", ",") | replace(",", ".", 1) }}
+    </p>
+    <p class="text-xs text-gray-400 mt-1">Receitas - Despesas</p>
+  </div>
+</div>
+
+<!-- Gráficos -->
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-6">
+
+  <!-- Gráfico de linha: 6 meses -->
+  <div class="xl:col-span-2 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5">
+    <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Evolução — Últimos 6 Meses</h3>
+    <div class="h-48">
+      <canvas id="lineChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Gráfico de pizza: gastos por categoria -->
+  <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5">
+    <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Gastos por Categoria</h3>
+    {% if cat_names %}
+    <div class="h-48">
+      <canvas id="pieChart"></canvas>
+    </div>
+    {% else %}
+    <div class="h-48 flex items-center justify-center">
+      <p class="text-sm text-gray-400">Sem despesas no mês</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Grid inferior: transações recentes + contas a vencer + orçamentos -->
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
+
+  <!-- Últimas transações -->
+  <div class="xl:col-span-2 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Últimas Transações</h3>
+      <a href="/transactions" class="text-xs text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">Ver todas →</a>
+    </div>
+    {% if recent_transactions %}
+    <div class="space-y-2">
+      {% for t in recent_transactions %}
+      <div class="flex items-center gap-3 py-2 border-b border-gray-100 dark:border-gray-700 last:border-0">
+        <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0
+          {% if t.type.value == 'income' %}bg-green-100 text-green-600{% elif t.type.value == 'expense' %}bg-red-100 text-red-600{% else %}bg-gray-100 text-gray-600{% endif %}">
+          <i data-lucide="{% if t.type.value == 'income' %}arrow-down-left{% elif t.type.value == 'expense' %}arrow-up-right{% else %}repeat{% endif %}" class="w-3.5 h-3.5"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">
+            {{ t.description or (t.category.name if t.category else "Sem categoria") }}
+          </p>
+          <p class="text-xs text-gray-400">{{ t.date.strftime("%d/%m/%Y") }} · {{ t.account.name }}</p>
+        </div>
+        <span class="text-sm font-semibold flex-shrink-0
+          {% if t.type.value == 'income' %}text-green-600{% elif t.type.value == 'expense' %}text-red-600{% else %}text-gray-600{% endif %}">
+          {% if t.type.value == 'income' %}+{% elif t.type.value == 'expense' %}-{% endif %}R$ {{ "%.2f"|format(t.amount) }}
+        </span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-sm text-gray-400 text-center py-8">Nenhuma transação ainda.<br>
+      <a href="/transactions/new" class="text-indigo-600 hover:underline">Adicionar primeira transação</a>
+    </p>
+    {% endif %}
+  </div>
+
+  <!-- Lateral direita -->
+  <div class="space-y-4">
+
+    <!-- Contas a vencer -->
+    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Vencendo em 7 dias</h3>
+        <a href="/recurring" class="text-xs text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">Ver →</a>
+      </div>
+      {% if upcoming_bills %}
+      <div class="space-y-2">
+        {% for bill in upcoming_bills %}
+        <div class="flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2 min-w-0">
+            <i data-lucide="calendar-clock" class="w-3.5 h-3.5 text-orange-500 flex-shrink-0"></i>
+            <span class="text-sm text-gray-700 dark:text-gray-300 truncate">{{ bill.name }}</span>
+          </div>
+          <div class="text-right flex-shrink-0">
+            <p class="text-xs font-semibold text-gray-900 dark:text-white">R$ {{ "%.2f"|format(bill.amount) }}</p>
+            <p class="text-xs text-orange-500">{{ bill.next_occurrence.strftime("%d/%m") }}</p>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="text-xs text-gray-400 text-center py-2">Nenhuma conta nos próximos 7 dias</p>
+      {% endif %}
+    </div>
+
+    <!-- Orçamentos -->
+    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Orçamentos</h3>
+        <a href="/budgets" class="text-xs text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">Ver →</a>
+      </div>
+      {% if budgets_with_spent %}
+      <div class="space-y-3">
+        {% for item in budgets_with_spent %}
+        <div>
+          <div class="flex justify-between text-xs mb-1">
+            <span class="text-gray-600 dark:text-gray-400 truncate">{{ item.budget.category.name }}</span>
+            <span class="font-medium {% if item.pct >= 90 %}text-red-500{% elif item.pct >= 70 %}text-yellow-500{% else %}text-green-500{% endif %}">
+              {{ item.pct }}%
+            </span>
+          </div>
+          <div class="h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+            <div class="h-full rounded-full {% if item.pct >= 90 %}bg-red-500{% elif item.pct >= 70 %}bg-yellow-500{% else %}bg-green-500{% endif %}"
+                 style="width: {{ item.pct }}%"></div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="text-xs text-gray-400 text-center py-2">
+        <a href="/budgets/new" class="text-indigo-600 hover:underline">Criar orçamento</a>
+      </p>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const isDark = document.documentElement.classList.contains('dark');
+const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)';
+const textColor = isDark ? '#9ca3af' : '#6b7280';
+
+// Gráfico de linha
+const lineCtx = document.getElementById('lineChart');
+if (lineCtx) {
+  new Chart(lineCtx, {
+    type: 'line',
+    data: {
+      labels: {{ months_labels | tojson }},
+      datasets: [
+        {
+          label: 'Receitas',
+          data: {{ months_income | tojson }},
+          borderColor: '#10b981',
+          backgroundColor: 'rgba(16,185,129,0.1)',
+          tension: 0.4, fill: true, pointRadius: 3,
+        },
+        {
+          label: 'Despesas',
+          data: {{ months_expense | tojson }},
+          borderColor: '#ef4444',
+          backgroundColor: 'rgba(239,68,68,0.1)',
+          tension: 0.4, fill: true, pointRadius: 3,
+        },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: textColor, boxWidth: 12, font: { size: 11 } } } },
+      scales: {
+        x: { ticks: { color: textColor, font: { size: 10 } }, grid: { color: gridColor } },
+        y: { ticks: { color: textColor, font: { size: 10 }, callback: v => 'R$' + v.toLocaleString('pt-BR') }, grid: { color: gridColor } },
+      },
+    },
+  });
+}
+
+// Gráfico de pizza
+const pieCtx = document.getElementById('pieChart');
+if (pieCtx && {{ cat_names | tojson }}.length > 0) {
+  new Chart(pieCtx, {
+    type: 'doughnut',
+    data: {
+      labels: {{ cat_names | tojson }},
+      datasets: [{ data: {{ cat_totals | tojson }}, backgroundColor: {{ cat_colors | tojson }}, borderWidth: 2 }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { color: textColor, boxWidth: 10, font: { size: 10 }, padding: 6 } },
+      },
+    },
+  });
+}
+</script>
+{% endblock %}

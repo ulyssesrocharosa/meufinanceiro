@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}{{ "Editar" if bill else "Nova" }} Recorrente — Minhas Finanças{% endblock %}
+{% block page_title %}{{ "Editar Recorrente" if bill else "Nova Conta Recorrente" }}{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto">
+  <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
+    <form method="POST"
+          action="{{ '/recurring/' + bill.id|string + '/edit' if bill else '/recurring' }}"
+          class="space-y-5">
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Nome *</label>
+        <input type="text" name="name" required value="{{ bill.name if bill else '' }}"
+               placeholder="Ex: Aluguel, Netflix, Academia..."
+               class="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm
+                      dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Valor *</label>
+        <div class="relative">
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">R$</span>
+          <input type="number" name="amount" step="0.01" min="0.01" required
+                 value="{{ '%.2f'|format(bill.amount) if bill else '' }}"
+                 class="w-full pl-10 pr-4 border border-gray-300 dark:border-gray-600 rounded-xl py-2.5 text-sm
+                        dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Frequência *</label>
+        <select name="frequency" required
+                class="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm
+                       dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+          {% set freq_labels = {"daily":"Diária","weekly":"Semanal","monthly":"Mensal","quarterly":"Trimestral","yearly":"Anual"} %}
+          {% for f in frequencies %}
+          <option value="{{ f }}" {% if bill and bill.frequency.value == f %}selected{% elif not bill and f == 'monthly' %}selected{% endif %}>
+            {{ freq_labels.get(f, f) }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Data início *</label>
+          <input type="date" name="start_date" required
+                 value="{{ bill.start_date.isoformat() if bill else today }}"
+                 class="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm
+                        dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Data fim</label>
+          <input type="date" name="end_date"
+                 value="{{ bill.end_date.isoformat() if bill and bill.end_date else '' }}"
+                 class="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm
+                        dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Categoria</label>
+        <select name="category_id"
+                class="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm
+                       dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+          <option value="">Sem categoria</option>
+          {% for cat in categories %}
+          <option value="{{ cat.id }}" {% if bill and bill.category_id == cat.id %}selected{% endif %}>
+            {{ cat.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Lembrete (dias antes)</label>
+        <input type="number" name="days_before_reminder" min="0" max="30"
+               value="{{ bill.days_before_reminder if bill else 3 }}"
+               class="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm
+                      dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+      </div>
+
+      <div class="flex gap-3 pt-2">
+        <button type="submit"
+                class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-xl text-sm transition-colors">
+          {{ "Salvar" if bill else "Criar recorrente" }}
+        </button>
+        <a href="/recurring"
+           class="flex-1 text-center border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium py-2.5 rounded-xl text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+          Cancelar
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

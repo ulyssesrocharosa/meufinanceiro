@@ -1,0 +1,31 @@
+version: "3.8"
+services:
+  financeiropython:
+    image: ${REGISTRY}/financeiropython:${TAG:-latest}
+    volumes:
+      - financas_data:/app/data
+    environment:
+      DATABASE_URL: sqlite:////app/data/financas.db
+      SECRET_KEY: ${SECRET_KEY}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      EVOLUTION_API_URL: ${EVOLUTION_API_URL}
+      EVOLUTION_API_KEY: ${EVOLUTION_API_KEY}
+      EVOLUTION_INSTANCE: ${EVOLUTION_INSTANCE}
+    deploy:
+      replicas: 1
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.financas-py.rule=Host(`financas.${DOMAIN}`)"
+        - "traefik.http.routers.financas-py.entrypoints=websecure"
+        - "traefik.http.routers.financas-py.tls.certresolver=letsencrypt"
+        - "traefik.http.services.financas-py.loadbalancer.server.port=8000"
+    networks:
+      - traefik-public
+
+volumes:
+  financas_data:
+
+networks:
+  traefik-public:
+    external: true

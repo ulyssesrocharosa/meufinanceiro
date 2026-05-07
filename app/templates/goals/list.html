@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Metas — Minhas Finanças{% endblock %}
+{% block page_title %}Metas{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+  <p class="text-sm text-gray-500">{{ goals_data | length }} meta(s)</p>
+  <a href="/goals/new"
+     class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors">
+    <i data-lucide="plus" class="w-4 h-4"></i> Nova Meta
+  </a>
+</div>
+
+{% if goals_data %}
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+  {% for item in goals_data %}
+  {% set g = item.goal %}
+  <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5">
+    <!-- Header -->
+    <div class="flex items-start justify-between mb-1">
+      <h3 class="font-semibold text-gray-900 dark:text-white">{{ g.name }}</h3>
+      <span class="text-xs px-2 py-0.5 rounded-full flex-shrink-0 ml-2
+        {% if g.priority.value == 'high' %}bg-red-100 text-red-600
+        {% elif g.priority.value == 'medium' %}bg-yellow-100 text-yellow-600
+        {% else %}bg-gray-100 text-gray-500{% endif %}">
+        {{ {"high":"Alta","medium":"Média","low":"Baixa"}.get(g.priority.value, "") }}
+      </span>
+    </div>
+
+    <p class="text-xs text-gray-400 mb-4">
+      Prazo: {{ g.target_date.strftime("%d/%m/%Y") }}
+      {% if item.days_left >= 0 %} · {{ item.days_left }} dia(s) restante(s)
+      {% else %} · <span class="text-red-500">vencida</span>{% endif %}
+    </p>
+
+    <!-- Progresso -->
+    <div class="mb-4">
+      <div class="flex justify-between text-sm mb-2">
+        <span class="text-gray-600 dark:text-gray-400">R$ {{ "%.2f"|format(g.current_amount) }}</span>
+        <span class="text-gray-400">R$ {{ "%.2f"|format(g.target_amount) }}</span>
+      </div>
+      <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+        <div class="h-full rounded-full transition-all
+          {% if item.pct >= 100 %}bg-green-500{% elif item.pct >= 50 %}bg-indigo-500{% else %}bg-indigo-400{% endif %}"
+             style="width: {{ item.pct }}%"></div>
+      </div>
+      <p class="text-xs font-semibold mt-1
+        {% if item.pct >= 100 %}text-green-500{% else %}text-indigo-600{% endif %}">
+        {{ item.pct }}% concluída
+      </p>
+    </div>
+
+    <!-- Contribuição rápida -->
+    {% if item.pct < 100 %}
+    <form method="POST" action="/goals/{{ g.id }}/contribute" class="flex gap-2 mb-3">
+      <div class="relative flex-1">
+        <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs">R$</span>
+        <input type="number" name="amount" step="0.01" min="0.01" placeholder="0,00"
+               class="w-full pl-8 pr-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm
+                      dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+      </div>
+      <button type="submit" class="bg-indigo-600 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-indigo-700 transition-colors whitespace-nowrap">
+        Contribuir
+      </button>
+    </form>
+    {% else %}
+    <div class="flex items-center gap-1.5 mb-3 text-green-600">
+      <i data-lucide="check-circle" class="w-4 h-4"></i>
+      <span class="text-sm font-medium">Meta alcançada!</span>
+    </div>
+    {% endif %}
+
+    <div class="flex gap-2">
+      <a href="/goals/{{ g.id }}/edit"
+         class="text-xs border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 px-3 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+        Editar
+      </a>
+      <form method="POST" action="/goals/{{ g.id }}/delete" class="inline"
+            onsubmit="return confirmDelete('Excluir meta {{ g.name }}?')">
+        <button type="submit" class="text-xs border border-red-200 text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors">
+          Excluir
+        </button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-16">
+  <i data-lucide="target" class="w-12 h-12 text-gray-300 mx-auto mb-4"></i>
+  <h3 class="text-lg font-medium text-gray-600 mb-2">Nenhuma meta criada</h3>
+  <a href="/goals/new" class="inline-flex items-center gap-2 bg-indigo-600 text-white text-sm px-4 py-2 rounded-xl hover:bg-indigo-700 mt-2">
+    <i data-lucide="plus" class="w-4 h-4"></i> Criar meta
+  </a>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}{{ "Editar" if investment else "Novo" }} Investimento — Minhas Finanças{% endblock %}
+{% block page_title %}{{ "Editar Investimento" if investment else "Novo Investimento" }}{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto">
+  <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
+    <form method="POST"
+          action="{{ '/investments/' + investment.id|string + '/edit' if investment else '/investments' }}"
+          class="space-y-5">
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Nome *</label>
+        <input type="text" name="name" required value="{{ investment.name if investment else '' }}"
+               placeholder="Ex: Tesouro Selic 2029, PETR4..."
+               class="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm
+                      dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Conta *</label>
+        <select name="account_id" required
+                class="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm
+                       dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+          {% for acc in accounts %}
+          <option value="{{ acc.id }}" {% if investment and investment.account_id == acc.id %}selected{% endif %}>
+            {{ acc.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Tipo</label>
+          <select name="type"
+                  class="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm
+                         dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+            <option value="">Selecione...</option>
+            {% set type_labels = {"stock":"Ação","bond":"Renda Fixa","fund":"Fundo","crypto":"Crypto","real_estate":"FII","other":"Outro"} %}
+            {% for t in inv_types %}
+            <option value="{{ t }}" {% if investment and investment.type and investment.type.value == t %}selected{% endif %}>
+              {{ type_labels.get(t, t) }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Risco</label>
+          <select name="risk_level"
+                  class="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm
+                         dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+            <option value="">Selecione...</option>
+            {% set risk_labels = {"low":"Baixo","medium":"Médio","high":"Alto"} %}
+            {% for r in risk_levels %}
+            <option value="{{ r }}" {% if investment and investment.risk_level and investment.risk_level.value == r %}selected{% endif %}>
+              {{ risk_labels.get(r, r) }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Data de compra *</label>
+        <input type="date" name="purchase_date" required
+               value="{{ investment.purchase_date.isoformat() if investment else today }}"
+               class="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm
+                      dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Valor investido *</label>
+          <div class="relative">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">R$</span>
+            <input type="number" name="amount" step="0.01" min="0.01" required
+                   value="{{ '%.2f'|format(investment.amount) if investment else '' }}"
+                   class="w-full pl-10 pr-4 border border-gray-300 dark:border-gray-600 rounded-xl py-2.5 text-sm
+                          dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Valor atual</label>
+          <div class="relative">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">R$</span>
+            <input type="number" name="current_value" step="0.01" min="0"
+                   value="{{ '%.2f'|format(investment.current_value) if investment and investment.current_value is not none else '' }}"
+                   placeholder="Opcional"
+                   class="w-full pl-10 pr-4 border border-gray-300 dark:border-gray-600 rounded-xl py-2.5 text-sm
+                          dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+          </div>
+        </div>
+      </div>
+
+      <div class="flex gap-3 pt-2">
+        <button type="submit"
+                class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-xl text-sm transition-colors">
+          {{ "Salvar" if investment else "Adicionar investimento" }}
+        </button>
+        <a href="/investments"
+           class="flex-1 text-center border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium py-2.5 rounded-xl text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+          Cancelar
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

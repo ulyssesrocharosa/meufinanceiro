@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}{{ "Editar" if transaction else "Nova" }} Transação — Minhas Finanças{% endblock %}
+{% block page_title %}{{ "Editar Transação" if transaction else "Nova Transação" }}{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto">
+  <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
+    <form method="POST"
+          action="{{ '/transactions/' + transaction.id|string + '/edit' if transaction else '/transactions' }}"
+          class="space-y-5">
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Tipo *</label>
+          <select name="type" required id="type-select"
+                  class="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm
+                         dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+            {% set type_labels = {"income":"Receita","expense":"Despesa","transfer":"Transferência"} %}
+            {% for t in transaction_types %}
+            <option value="{{ t }}" {% if transaction and transaction.type.value == t %}selected{% endif %}>
+              {{ type_labels.get(t, t) }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Status</label>
+          <select name="status"
+                  class="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm
+                         dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+            {% set status_labels = {"pending":"Pendente","completed":"Concluída","cancelled":"Cancelada"} %}
+            {% for s in transaction_statuses %}
+            <option value="{{ s }}" {% if transaction and transaction.status.value == s %}selected{% elif not transaction and s == 'completed' %}selected{% endif %}>
+              {{ status_labels.get(s, s) }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Valor *</label>
+        <div class="relative">
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">R$</span>
+          <input type="number" name="amount" step="0.01" min="0.01" required
+                 value="{{ '%.2f'|format(transaction.amount) if transaction else '' }}"
+                 class="w-full pl-10 pr-4 border border-gray-300 dark:border-gray-600 rounded-xl py-2.5 text-sm
+                        dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Data *</label>
+        <input type="date" name="transaction_date" required
+               value="{{ transaction.date.isoformat() if transaction else today }}"
+               class="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm
+                      dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Conta *</label>
+        <select name="account_id" required
+                class="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm
+                       dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+          {% for acc in accounts %}
+          <option value="{{ acc.id }}" {% if transaction and transaction.account_id == acc.id %}selected{% endif %}>
+            {{ acc.name }} (R$ {{ "%.2f"|format(acc.balance) }})
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Categoria</label>
+        <select name="category_id"
+                class="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm
+                       dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+          <option value="">Sem categoria</option>
+          {% for cat in categories %}
+          <option value="{{ cat.id }}" {% if transaction and transaction.category_id == cat.id %}selected{% endif %}>
+            {{ cat.name }} ({{ {"income":"receita","expense":"despesa","transfer":"transf."}.get(cat.type.value, "") }})
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Descrição</label>
+        <input type="text" name="description" value="{{ transaction.description or '' if transaction else '' }}"
+               placeholder="Ex: Almoço, Salário março..."
+               class="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm
+                      dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Forma de pagamento</label>
+        <input type="text" name="payment_method" value="{{ transaction.payment_method or '' if transaction else '' }}"
+               placeholder="Ex: Cartão, PIX, Dinheiro..."
+               class="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm
+                      dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+      </div>
+
+      <div class="flex gap-3 pt-2">
+        <button type="submit"
+                class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-xl text-sm transition-colors">
+          {{ "Salvar" if transaction else "Criar transação" }}
+        </button>
+        <a href="/transactions"
+           class="flex-1 text-center border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium py-2.5 rounded-xl text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+          Cancelar
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

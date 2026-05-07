@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Categorias — Minhas Finanças{% endblock %}
+{% block page_title %}Categorias{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+  <p class="text-sm text-gray-500">{{ (system_cats | length) + (user_cats | length) }} categorias no total</p>
+  <a href="/categories/new"
+     class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors">
+    <i data-lucide="plus" class="w-4 h-4"></i> Nova Categoria
+  </a>
+</div>
+
+<!-- Categorias do usuário -->
+{% if user_cats %}
+<div class="mb-8">
+  <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Minhas Categorias</h3>
+  <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700">
+    {% for cat in user_cats %}
+    <div class="flex items-center gap-3 px-5 py-3.5">
+      <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background-color: {{ cat.color }}22">
+        <i data-lucide="{{ cat.icon }}" class="w-4 h-4" style="color: {{ cat.color }}"></i>
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-medium text-gray-900 dark:text-white">{{ cat.name }}</p>
+        <p class="text-xs text-gray-400">
+          {{ {"income":"Receita","expense":"Despesa","transfer":"Transferência"}.get(cat.type.value, cat.type.value) }}
+          {% if cat.parent %} · Sub de {{ cat.parent.name }}{% endif %}
+        </p>
+      </div>
+      <div class="flex items-center gap-2">
+        <a href="/categories/{{ cat.id }}/edit"
+           class="text-xs text-gray-500 hover:text-indigo-600 px-2 py-1 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+          Editar
+        </a>
+        <form method="POST" action="/categories/{{ cat.id }}/delete" class="inline"
+              onsubmit="return confirmDelete('Excluir categoria {{ cat.name }}?')">
+          <button type="submit" class="text-xs text-gray-500 hover:text-red-600 px-2 py-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+            Excluir
+          </button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- Categorias do sistema -->
+<div>
+  <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Categorias do Sistema</h3>
+  <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700">
+    {% for cat in system_cats %}
+    <div class="flex items-center gap-3 px-5 py-3.5">
+      <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background-color: {{ cat.color }}22">
+        <i data-lucide="{{ cat.icon }}" class="w-4 h-4" style="color: {{ cat.color }}"></i>
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-medium text-gray-900 dark:text-white">{{ cat.name }}</p>
+        <p class="text-xs text-gray-400">
+          {{ {"income":"Receita","expense":"Despesa","transfer":"Transferência"}.get(cat.type.value, cat.type.value) }}
+          · Sistema
+        </p>
+      </div>
+      <span class="text-xs bg-gray-100 dark:bg-gray-700 text-gray-400 px-2 py-0.5 rounded-full">padrão</span>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+{% if not system_cats and not user_cats %}
+<div class="text-center py-16">
+  <i data-lucide="tag" class="w-12 h-12 text-gray-300 mx-auto mb-4"></i>
+  <p class="text-gray-500">Nenhuma categoria encontrada</p>
+</div>
+{% endif %}
+{% endblock %}

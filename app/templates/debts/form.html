@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}{{ "Editar" if debt else "Nova" }} Dívida — Minhas Finanças{% endblock %}
+{% block page_title %}{{ "Editar Dívida" if debt else "Nova Dívida" }}{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto">
+  <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
+    <form method="POST"
+          action="{{ '/debts/' + debt.id|string + '/edit' if debt else '/debts' }}"
+          class="space-y-5">
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Nome *</label>
+        <input type="text" name="name" required value="{{ debt.name if debt else '' }}"
+               placeholder="Ex: Financiamento carro, Empréstimo banco..."
+               class="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm
+                      dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Tipo</label>
+        <select name="type"
+                class="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm
+                       dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+          <option value="">Selecione...</option>
+          {% set type_labels = {"credit_card":"Cartão de Crédito","loan":"Empréstimo","mortgage":"Financiamento","personal":"Pessoal","other":"Outro"} %}
+          {% for t in debt_types %}
+          <option value="{{ t }}" {% if debt and debt.type and debt.type.value == t %}selected{% endif %}>
+            {{ type_labels.get(t, t) }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Valor original *</label>
+          <div class="relative">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">R$</span>
+            <input type="number" name="original_amount" step="0.01" min="0.01" required
+                   value="{{ '%.2f'|format(debt.original_amount) if debt else '' }}"
+                   class="w-full pl-10 pr-4 border border-gray-300 dark:border-gray-600 rounded-xl py-2.5 text-sm
+                          dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Saldo devedor *</label>
+          <div class="relative">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">R$</span>
+            <input type="number" name="current_amount" step="0.01" min="0" required
+                   value="{{ '%.2f'|format(debt.current_amount) if debt else '' }}"
+                   class="w-full pl-10 pr-4 border border-gray-300 dark:border-gray-600 rounded-xl py-2.5 text-sm
+                          dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Juros (% a.m.)</label>
+          <input type="number" name="interest_rate" step="0.01" min="0"
+                 value="{{ '%.2f'|format(debt.interest_rate) if debt else '0.00' }}"
+                 class="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm
+                        dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Vencimento</label>
+          <input type="date" name="due_date"
+                 value="{{ debt.due_date.isoformat() if debt and debt.due_date else '' }}"
+                 class="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm
+                        dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Status</label>
+        <select name="status"
+                class="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm
+                       dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+          {% set status_labels = {"active":"Ativa","paid":"Quitada","defaulted":"Inadimplente"} %}
+          {% for s in debt_statuses %}
+          <option value="{{ s }}" {% if debt and debt.status.value == s %}selected{% elif not debt and s == 'active' %}selected{% endif %}>
+            {{ status_labels.get(s, s) }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="flex gap-3 pt-2">
+        <button type="submit"
+                class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-xl text-sm transition-colors">
+          {{ "Salvar" if debt else "Registrar dívida" }}
+        </button>
+        <a href="/debts"
+           class="flex-1 text-center border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium py-2.5 rounded-xl text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+          Cancelar
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

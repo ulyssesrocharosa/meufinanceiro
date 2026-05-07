@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Dívidas — Minhas Finanças{% endblock %}
+{% block page_title %}Dívidas{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+  <div>
+    <p class="text-sm text-gray-500">
+      Total em aberto: <span class="font-bold text-red-600">R$ {{ "%.2f"|format(total_debt) }}</span>
+    </p>
+  </div>
+  <a href="/debts/new"
+     class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors">
+    <i data-lucide="plus" class="w-4 h-4"></i> Nova Dívida
+  </a>
+</div>
+
+{% if debts_data %}
+<div class="space-y-4">
+  {% for item in debts_data %}
+  {% set d = item.debt %}
+  <div class="bg-white dark:bg-gray-800 rounded-2xl border
+    {% if d.status.value == 'paid' %}border-green-200 dark:border-green-800 opacity-70
+    {% elif d.due_date and d.due_date < today %}border-red-300 dark:border-red-800
+    {% else %}border-gray-200 dark:border-gray-700{% endif %} p-5">
+
+    <div class="flex items-start justify-between gap-4 mb-4">
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 flex-wrap mb-1">
+          <h3 class="font-semibold text-gray-900 dark:text-white">{{ d.name }}</h3>
+          <span class="text-xs px-2 py-0.5 rounded-full
+            {% if d.status.value == 'paid' %}bg-green-100 text-green-700
+            {% elif d.status.value == 'defaulted' %}bg-red-100 text-red-700
+            {% else %}bg-blue-100 text-blue-700{% endif %}">
+            {{ {"active":"Ativa","paid":"Quitada","defaulted":"Inadimplente"}.get(d.status.value, "") }}
+          </span>
+          {% if d.type %}
+          <span class="text-xs bg-gray-100 dark:bg-gray-700 text-gray-500 px-2 py-0.5 rounded-full">
+            {{ {"credit_card":"Cartão","loan":"Empréstimo","mortgage":"Financiamento","personal":"Pessoal","other":"Outro"}.get(d.type.value, "") }}
+          </span>
+          {% endif %}
+        </div>
+        <p class="text-xs text-gray-400">
+          {% if d.interest_rate > 0 %}Juros: {{ d.interest_rate }}% a.m.{% endif %}
+          {% if d.due_date %} · Vencimento: <span {% if d.due_date < today and d.status.value == 'active' %}class="text-red-500"{% endif %}>{{ d.due_date.strftime("%d/%m/%Y") }}</span>{% endif %}
+        </p>
+      </div>
+      <div class="text-right flex-shrink-0">
+        <p class="text-xl font-bold text-red-600">R$ {{ "%.2f"|format(d.current_amount) }}</p>
+        <p class="text-xs text-gray-400">de R$ {{ "%.2f"|format(d.original_amount) }}</p>
+      </div>
+    </div>
+
+    <!-- Barra de progresso de quitação -->
+    <div class="mb-4">
+      <div class="flex justify-between text-xs mb-1.5">
+        <span class="text-gray-500">Pago: R$ {{ "%.2f"|format(item.paid) }}</span>
+        <span class="font-semibold
+          {% if item.pct >= 100 %}text-green-500{% elif item.pct >= 50 %}text-indigo-600{% else %}text-red-500{% endif %}">
+          {{ item.pct }}% quitado
+        </span>
+      </div>
+      <div class="h-2.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+        <div class="h-full rounded-full transition-all
+          {% if item.pct >= 100 %}bg-green-500{% elif item.pct >= 50 %}bg-indigo-500{% else %}bg-red-400{% endif %}"
+             style="width: {{ item.pct }}%"></div>
+      </div>
+    </div>
+
+    <div class="flex gap-2">
+      <a href="/debts/{{ d.id }}/edit"
+         class="text-xs border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 px-3 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+        Editar
+      </a>
+      <form method="POST" action="/debts/{{ d.id }}/delete" class="inline"
+            onsubmit="return confirmDelete('Excluir dívida {{ d.name }}?')">
+        <button type="submit" class="text-xs border border-red-200 text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors">
+          Excluir
+        </button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-16">
+  <i data-lucide="credit-card" class="w-12 h-12 text-gray-300 mx-auto mb-4"></i>
+  <h3 class="text-lg font-medium text-gray-600 mb-2">Nenhuma dívida registrada</h3>
+  <a href="/debts/new" class="inline-flex items-center gap-2 bg-indigo-600 text-white text-sm px-4 py-2 rounded-xl hover:bg-indigo-700 mt-2">
+    <i data-lucide="plus" class="w-4 h-4"></i> Registrar dívida
+  </a>
+</div>
+{% endif %}
+{% endblock %}

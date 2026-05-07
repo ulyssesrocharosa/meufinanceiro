@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}{{ "Editar" if account else "Nova" }} Conta — Minhas Finanças{% endblock %}
+{% block page_title %}{{ "Editar Conta" if account else "Nova Conta" }}{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto">
+  <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
+    <form method="POST" action="{{ '/accounts/' + account.id|string + '/edit' if account else '/accounts' }}" class="space-y-5">
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Nome *</label>
+        <input type="text" name="name" required value="{{ account.name if account else '' }}"
+               placeholder="Ex: Nubank, Itaú, Carteira..."
+               class="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm
+                      dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Tipo *</label>
+        <select name="type" required
+                class="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm
+                       dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+          {% set type_labels = {"checking":"Conta Corrente","savings":"Poupança","credit":"Cartão de Crédito","investment":"Investimento","cash":"Dinheiro","other":"Outro"} %}
+          {% for t in account_types %}
+          <option value="{{ t }}" {% if account and account.type.value == t %}selected{% endif %}>
+            {{ type_labels.get(t, t) }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      {% if not account %}
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Saldo inicial</label>
+        <div class="relative">
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">R$</span>
+          <input type="number" name="balance" step="0.01" value="0.00"
+                 class="w-full pl-10 pr-4 border border-gray-300 dark:border-gray-600 rounded-xl py-2.5 text-sm
+                        dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+        </div>
+      </div>
+      {% endif %}
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Instituição</label>
+        <input type="text" name="institution" value="{{ account.institution or '' if account else '' }}"
+               placeholder="Ex: Nubank, Itaú, Bradesco..."
+               class="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm
+                      dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Número da conta</label>
+        <input type="text" name="account_number" value="{{ account.account_number or '' if account else '' }}"
+               placeholder="Opcional"
+               class="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm
+                      dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Cor</label>
+        <input type="color" name="color" value="{{ account.color if account else '#3B82F6' }}"
+               class="h-10 w-20 border border-gray-300 rounded-xl cursor-pointer">
+      </div>
+
+      <div class="flex gap-3 pt-2">
+        <button type="submit"
+                class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-xl text-sm transition-colors">
+          {{ "Salvar alterações" if account else "Criar conta" }}
+        </button>
+        <a href="/accounts"
+           class="flex-1 text-center border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium py-2.5 rounded-xl text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+          Cancelar
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

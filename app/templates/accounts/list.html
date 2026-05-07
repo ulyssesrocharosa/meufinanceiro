@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Contas — Minhas Finanças{% endblock %}
+{% block page_title %}Contas{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+  <div>
+    <p class="text-sm text-gray-500">Saldo total: <span class="font-bold text-gray-900 dark:text-white">R$ {{ "%.2f"|format(total_balance) }}</span></p>
+  </div>
+  <a href="/accounts/new"
+     class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors">
+    <i data-lucide="plus" class="w-4 h-4"></i> Nova Conta
+  </a>
+</div>
+
+{% if accounts %}
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+  {% for account in accounts %}
+  <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden
+              {% if not account.is_active %}opacity-60{% endif %}">
+    <!-- Color bar -->
+    <div class="h-1.5" style="background-color: {{ account.color }}"></div>
+    <div class="p-5">
+      <div class="flex items-start justify-between mb-3">
+        <div>
+          <h3 class="font-semibold text-gray-900 dark:text-white">{{ account.name }}</h3>
+          <p class="text-xs text-gray-400 mt-0.5">
+            {{ {"checking":"Conta Corrente","savings":"Poupança","credit":"Cartão de Crédito","investment":"Investimento","cash":"Dinheiro","other":"Outro"}.get(account.type.value, account.type.value) }}
+            {% if account.institution %} · {{ account.institution }}{% endif %}
+          </p>
+        </div>
+        {% if not account.is_active %}
+        <span class="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">Inativa</span>
+        {% endif %}
+      </div>
+      <p class="text-2xl font-bold {% if account.balance >= 0 %}text-gray-900 dark:text-white{% else %}text-red-500{% endif %} mb-4">
+        R$ {{ "%.2f"|format(account.balance) }}
+      </p>
+      <div class="flex items-center gap-2 flex-wrap">
+        <a href="/accounts/{{ account.id }}/edit"
+           class="text-xs border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 px-3 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+          Editar
+        </a>
+        {% if account.is_active %}
+        <a href="/accounts/{{ account.id }}/transfer"
+           class="text-xs border border-indigo-200 text-indigo-600 px-3 py-1.5 rounded-lg hover:bg-indigo-50 transition-colors">
+          Transferir
+        </a>
+        {% endif %}
+        <form method="POST" action="/accounts/{{ account.id }}/toggle" class="inline">
+          <button type="submit"
+                  class="text-xs border {% if account.is_active %}border-orange-200 text-orange-600 hover:bg-orange-50{% else %}border-green-200 text-green-600 hover:bg-green-50{% endif %} px-3 py-1.5 rounded-lg transition-colors">
+            {{ "Desativar" if account.is_active else "Ativar" }}
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-16">
+  <i data-lucide="wallet" class="w-12 h-12 text-gray-300 mx-auto mb-4"></i>
+  <h3 class="text-lg font-medium text-gray-600 dark:text-gray-400 mb-2">Nenhuma conta cadastrada</h3>
+  <p class="text-sm text-gray-400 mb-4">Adicione sua primeira conta para começar</p>
+  <a href="/accounts/new" class="inline-flex items-center gap-2 bg-indigo-600 text-white text-sm px-4 py-2 rounded-xl hover:bg-indigo-700 transition-colors">
+    <i data-lucide="plus" class="w-4 h-4"></i> Criar conta
+  </a>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}{{ "Editar" if category else "Nova" }} Categoria — Minhas Finanças{% endblock %}
+{% block page_title %}{{ "Editar Categoria" if category else "Nova Categoria" }}{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto">
+  <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
+    <form method="POST"
+          action="{{ '/categories/' + category.id|string + '/edit' if category else '/categories' }}"
+          class="space-y-5">
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Nome *</label>
+        <input type="text" name="name" required value="{{ category.name if category else '' }}"
+               placeholder="Ex: Alimentação, Freelance..."
+               class="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm
+                      dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Tipo *</label>
+        <select name="type" required
+                class="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm
+                       dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+          {% for t in category_types %}
+          <option value="{{ t }}" {% if category and category.type.value == t %}selected{% endif %}>
+            {{ {"income":"Receita","expense":"Despesa","transfer":"Transferência"}.get(t, t) }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Ícone (Lucide)</label>
+        <input type="text" name="icon" value="{{ category.icon if category else 'dollar-sign' }}"
+               placeholder="Ex: home, car, utensils..."
+               class="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm
+                      dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+        <p class="text-xs text-gray-400 mt-1">
+          <a href="https://lucide.dev/icons/" target="_blank" class="text-indigo-500 hover:underline">Ver ícones disponíveis ↗</a>
+        </p>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Cor</label>
+        <input type="color" name="color" value="{{ category.color if category else '#6B7280' }}"
+               class="h-10 w-20 border border-gray-300 rounded-xl cursor-pointer">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Categoria pai (opcional)</label>
+        <select name="parent_id"
+                class="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm
+                       dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+          <option value="">Nenhuma</option>
+          {% for p in parent_options %}
+          <option value="{{ p.id }}" {% if category and category.parent_id == p.id %}selected{% endif %}>
+            {{ p.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="flex gap-3 pt-2">
+        <button type="submit"
+                class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-xl text-sm transition-colors">
+          {{ "Salvar alterações" if category else "Criar categoria" }}
+        </button>
+        <a href="/categories"
+           class="flex-1 text-center border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium py-2.5 rounded-xl text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+          Cancelar
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

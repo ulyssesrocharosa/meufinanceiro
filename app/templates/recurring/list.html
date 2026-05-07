@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Recorrentes — Minhas Finanças{% endblock %}
+{% block page_title %}Contas Recorrentes{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+  <p class="text-sm text-gray-500">{{ bills | length }} recorrente(s)</p>
+  <a href="/recurring/new"
+     class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors">
+    <i data-lucide="plus" class="w-4 h-4"></i> Nova Recorrente
+  </a>
+</div>
+
+{% if bills %}
+<div class="space-y-3">
+  {% for bill in bills %}
+  {% set days_left = (bill.next_occurrence - today).days %}
+  <div class="bg-white dark:bg-gray-800 rounded-2xl border {% if not bill.is_active %}border-gray-200 dark:border-gray-700 opacity-60{% elif days_left <= 3 %}border-orange-300 dark:border-orange-700{% else %}border-gray-200 dark:border-gray-700{% endif %} p-5">
+    <div class="flex items-start justify-between gap-4">
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 mb-1">
+          <h3 class="font-semibold text-gray-900 dark:text-white">{{ bill.name }}</h3>
+          {% if not bill.is_active %}
+          <span class="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">inativa</span>
+          {% elif days_left <= 0 %}
+          <span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">vencida</span>
+          {% elif days_left <= 3 %}
+          <span class="text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full">vence em {{ days_left }}d</span>
+          {% endif %}
+        </div>
+        <p class="text-xs text-gray-400">
+          {{ {"daily":"Diário","weekly":"Semanal","monthly":"Mensal","quarterly":"Trimestral","yearly":"Anual"}.get(bill.frequency.value, "") }}
+          {% if bill.category %} · {{ bill.category.name }}{% endif %}
+          · Próximo: {{ bill.next_occurrence.strftime("%d/%m/%Y") }}
+        </p>
+      </div>
+      <div class="text-right flex-shrink-0">
+        <p class="text-xl font-bold text-gray-900 dark:text-white">R$ {{ "%.2f"|format(bill.amount) }}</p>
+      </div>
+    </div>
+
+    <!-- Ações -->
+    <div class="flex flex-wrap items-center gap-2 mt-4">
+      {% if bill.is_active %}
+      <!-- Botão pagar (abre mini form inline) -->
+      <button onclick="document.getElementById('pay-form-{{ bill.id }}').classList.toggle('hidden')"
+              class="inline-flex items-center gap-1.5 text-xs bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg transition-colors">
+        <i data-lucide="check" class="w-3.5 h-3.5"></i> Registrar pagamento
+      </button>
+      {% endif %}
+      <a href="/recurring/{{ bill.id }}/edit"
+         class="text-xs border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 px-3 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+        Editar
+      </a>
+      <form method="POST" action="/recurring/{{ bill.id }}/toggle" class="inline">
+        <button type="submit"
+                class="text-xs border {% if bill.is_active %}border-orange-200 text-orange-600 hover:bg-orange-50{% else %}border-green-200 text-green-600 hover:bg-green-50{% endif %} px-3 py-1.5 rounded-lg transition-colors">
+          {{ "Desativar" if bill.is_active else "Ativar" }}
+        </button>
+      </form>
+      <form method="POST" action="/recurring/{{ bill.id }}/delete" class="inline"
+            onsubmit="return confirmDelete('Excluir {{ bill.name }}?')">
+        <button type="submit" class="text-xs border border-red-200 text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors">
+          Excluir
+        </button>
+      </form>
+    </div>
+
+    <!-- Form de pagamento (hidden por padrão) -->
+    {% if bill.is_active %}
+    <div id="pay-form-{{ bill.id }}" class="hidden mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+      <form method="POST" action="/recurring/{{ bill.id }}/pay" class="flex flex-wrap gap-3 items-end">
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Conta *</label>
+          <select name="account_id" required
+                  class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+            {% for acc in user.accounts if acc.is_active %}
+            <option value="{{ acc.id }}">{{ acc.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Data *</label>
+          <input type="date" name="pay_date" value="{{ today.isoformat() }}" required
+                 class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+        </div>
+        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white text-sm px-4 py-1.5 rounded-lg transition-colors">
+          Confirmar
+        </button>
+      </form>
+    </div>
+    {% endif %}
+
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-16">
+  <i data-lucide="repeat" class="w-12 h-12 text-gray-300 mx-auto mb-4"></i>
+  <h3 class="text-lg font-medium text-gray-600 mb-2">Nenhuma conta recorrente</h3>
+  <a href="/recurring/new" class="inline-flex items-center gap-2 bg-indigo-600 text-white text-sm px-4 py-2 rounded-xl hover:bg-indigo-700 mt-2">
+    <i data-lucide="plus" class="w-4 h-4"></i> Adicionar
+  </a>
+</div>
+{% endif %}
+{% endblock %}
