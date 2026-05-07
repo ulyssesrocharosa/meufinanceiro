@@ -40,3 +40,31 @@ jobs:
 
       - name: Build da imagem
         run: docker build -t meufinanceiro:ci .
+
+  docker-push:
+    name: Publicar imagem no GHCR
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login no GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build e push da imagem
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/ulyssesrocharosa/financeiropython:latest
+            ghcr.io/ulyssesrocharosa/financeiropython:${{ github.sha }}
