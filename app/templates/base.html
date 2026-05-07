@@ -79,6 +79,19 @@
         {% endif %}
       </a>
 
+      <!-- Configurações -->
+      {% set settings_active = request.url.path.startswith("/settings") %}
+      <a href="/settings"
+         class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                {% if settings_active %}
+                bg-indigo-50 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300
+                {% else %}
+                text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700
+                {% endif %}">
+        <i data-lucide="settings" class="w-4 h-4 flex-shrink-0"></i>
+        <span>Configurações</span>
+      </a>
+
       <!-- Admin (só para admin) -->
       {% if user.role == 'admin' or user.role.value == 'admin' %}
       {% set admin_active = request.url.path.startswith("/admin") %}

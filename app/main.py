@@ -19,6 +19,7 @@ from app.modules.debts.router import router as debts_router
 from app.modules.investments.router import router as investments_router
 from app.modules.reports.router import router as reports_router
 from app.modules.notifications.router import router as notifications_router
+from app.modules.settings.router import router as settings_router
 from app.modules.admin.router import router as admin_router
 
 app = FastAPI(title="Minhas Finanças", docs_url=None, redoc_url=None)
@@ -44,6 +45,7 @@ app.include_router(debts_router)
 app.include_router(investments_router)
 app.include_router(reports_router)
 app.include_router(notifications_router)
+app.include_router(settings_router)
 app.include_router(admin_router)
 
 

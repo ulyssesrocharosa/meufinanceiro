@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+{% block title %}Configurações — Minhas Finanças{% endblock %}
+{% block page_title %}Configurações{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-6">
+
+  <form method="post" action="/settings" class="space-y-6">
+
+    <!-- WhatsApp -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+      <div class="flex items-center gap-3 mb-5">
+        <div class="w-9 h-9 bg-green-100 dark:bg-green-900/40 rounded-lg flex items-center justify-center">
+          <i data-lucide="message-circle" class="w-5 h-5 text-green-600 dark:text-green-400"></i>
+        </div>
+        <div>
+          <h2 class="text-sm font-semibold text-gray-900 dark:text-gray-100">WhatsApp</h2>
+          <p class="text-xs text-gray-500 dark:text-gray-400">Receba notificações pelo WhatsApp via Evolution API</p>
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Número do WhatsApp
+          </label>
+          <input type="text" name="whatsapp_phone"
+                 value="{{ user.profile.whatsapp_phone or '' }}"
+                 placeholder="5511999999999 (com DDI e DDD, sem espaços)"
+                 class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <p class="text-xs text-gray-400 mt-1">Formato: 5511999999999</p>
+        </div>
+
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Notificações ativas</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">Ativar envio de mensagens no WhatsApp</p>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" name="whatsapp_enabled" value="on"
+                   {% if user.profile and user.profile.whatsapp_enabled %}checked{% endif %}
+                   class="sr-only peer">
+            <div class="w-10 h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-indigo-500 dark:bg-gray-600 rounded-full peer peer-checked:bg-indigo-600 transition-colors
+                        after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-4"></div>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Horários de notificação -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+      <div class="flex items-center gap-3 mb-5">
+        <div class="w-9 h-9 bg-indigo-100 dark:bg-indigo-900/40 rounded-lg flex items-center justify-center">
+          <i data-lucide="clock" class="w-5 h-5 text-indigo-600 dark:text-indigo-400"></i>
+        </div>
+        <div>
+          <h2 class="text-sm font-semibold text-gray-900 dark:text-gray-100">Horários de Notificação</h2>
+          <p class="text-xs text-gray-500 dark:text-gray-400">Defina em qual hora do dia cada notificação será enviada</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <span class="flex items-center gap-1">
+              <i data-lucide="bell" class="w-3 h-3"></i> Lembrete de contas
+            </span>
+          </label>
+          <select name="notif_bill_hour"
+                  class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            {% for h in range(24) %}
+            <option value="{{ h }}"
+              {% if user.profile and user.profile.notif_bill_hour == h %}selected
+              {% elif not user.profile and h == 8 %}selected{% endif %}>
+              {{ '%02d:00' % h }}
+            </option>
+            {% endfor %}
+          </select>
+          <p class="text-xs text-gray-400 mt-1">Contas vencendo em até 7 dias</p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <span class="flex items-center gap-1">
+              <i data-lucide="pie-chart" class="w-3 h-3"></i> Alerta de orçamento
+            </span>
+          </label>
+          <select name="notif_budget_hour"
+                  class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            {% for h in range(24) %}
+            <option value="{{ h }}"
+              {% if user.profile and user.profile.notif_budget_hour == h %}selected
+              {% elif not user.profile and h == 9 %}selected{% endif %}>
+              {{ '%02d:00' % h }}
+            </option>
+            {% endfor %}
+          </select>
+          <p class="text-xs text-gray-400 mt-1">Orçamentos acima de 80% do limite</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Aparência -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+      <div class="flex items-center gap-3 mb-5">
+        <div class="w-9 h-9 bg-amber-100 dark:bg-amber-900/40 rounded-lg flex items-center justify-center">
+          <i data-lucide="sun" class="w-5 h-5 text-amber-600 dark:text-amber-400"></i>
+        </div>
+        <div>
+          <h2 class="text-sm font-semibold text-gray-900 dark:text-gray-100">Aparência</h2>
+          <p class="text-xs text-gray-500 dark:text-gray-400">Tema da interface</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <label class="flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-colors
+                      {% if not user.profile or user.profile.theme == 'light' %}border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20{% else %}border-gray-200 dark:border-gray-600 hover:border-gray-300{% endif %}">
+          <input type="radio" name="theme" value="light"
+                 {% if not user.profile or user.profile.theme == 'light' %}checked{% endif %}
+                 class="sr-only">
+          <i data-lucide="sun" class="w-4 h-4 text-amber-500"></i>
+          <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Claro</span>
+        </label>
+        <label class="flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-colors
+                      {% if user.profile and user.profile.theme == 'dark' %}border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20{% else %}border-gray-200 dark:border-gray-600 hover:border-gray-300{% endif %}">
+          <input type="radio" name="theme" value="dark"
+                 {% if user.profile and user.profile.theme == 'dark' %}checked{% endif %}
+                 class="sr-only">
+          <i data-lucide="moon" class="w-4 h-4 text-indigo-500"></i>
+          <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Escuro</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="flex justify-end">
+      <button type="submit"
+              class="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors">
+        Salvar configurações
+      </button>
+    </div>
+  </form>
+
+  <!-- Evolution API — status (fora do form) -->
+  <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+    <div class="flex items-center gap-3 mb-5">
+      <div class="w-9 h-9 bg-purple-100 dark:bg-purple-900/40 rounded-lg flex items-center justify-center">
+        <i data-lucide="zap" class="w-5 h-5 text-purple-600 dark:text-purple-400"></i>
+      </div>
+      <div>
+        <h2 class="text-sm font-semibold text-gray-900 dark:text-gray-100">Evolution API</h2>
+        <p class="text-xs text-gray-500 dark:text-gray-400">Verifique a conexão com a instância configurada</p>
+      </div>
+    </div>
+
+    {% if evolution_configured %}
+    <div class="space-y-3">
+      <div class="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50 rounded-lg px-4 py-3">
+        <div>
+          <span class="font-medium text-gray-700 dark:text-gray-300">Instância:</span>
+          <span class="ml-1 font-mono">{{ evolution_instance }}</span>
+        </div>
+        <div>
+          <span class="font-medium text-gray-700 dark:text-gray-300">URL:</span>
+          <span class="ml-1 font-mono truncate">{{ evolution_api_url }}</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <button id="btn-test" onclick="testConnection()"
+                class="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors">
+          <i data-lucide="wifi" class="w-4 h-4"></i>
+          Verificar conexão
+        </button>
+        <div id="test-result" class="hidden items-center gap-2 text-sm font-medium px-3 py-1.5 rounded-lg"></div>
+      </div>
+    </div>
+    {% else %}
+    <div class="flex items-start gap-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg px-4 py-3">
+      <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0"></i>
+      <div class="text-sm text-amber-800 dark:text-amber-300">
+        <p class="font-medium">Evolution API não configurada</p>
+        <p class="text-xs mt-0.5">Defina as variáveis <code class="font-mono bg-amber-100 dark:bg-amber-900 px-1 rounded">EVOLUTION_API_URL</code>, <code class="font-mono bg-amber-100 dark:bg-amber-900 px-1 rounded">EVOLUTION_API_KEY</code> e <code class="font-mono bg-amber-100 dark:bg-amber-900 px-1 rounded">EVOLUTION_INSTANCE</code> no ambiente do container.</p>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function testConnection() {
+  const btn = document.getElementById('btn-test');
+  const result = document.getElementById('test-result');
+
+  btn.disabled = true;
+  btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Verificando...';
+  lucide.createIcons();
+
+  try {
+    const r = await fetch('/settings/test-whatsapp', { method: 'POST' });
+    const data = await r.json();
+
+    result.classList.remove('hidden');
+    result.classList.add('flex');
+
+    if (data.ok) {
+      result.className = 'flex items-center gap-2 text-sm font-medium px-3 py-1.5 rounded-lg bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300';
+      result.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> ' + data.message;
+    } else {
+      result.className = 'flex items-center gap-2 text-sm font-medium px-3 py-1.5 rounded-lg bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300';
+      result.innerHTML = '<i data-lucide="x-circle" class="w-4 h-4"></i> ' + data.message;
+    }
+    lucide.createIcons();
+  } catch (e) {
+    result.classList.remove('hidden');
+    result.classList.add('flex');
+    result.className = 'flex items-center gap-2 text-sm font-medium px-3 py-1.5 rounded-lg bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300';
+    result.innerHTML = '<i data-lucide="x-circle" class="w-4 h-4"></i> Erro de rede.';
+    lucide.createIcons();
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '<i data-lucide="wifi" class="w-4 h-4"></i> Verificar conexão';
+  lucide.createIcons();
+}
+</script>
+{% endblock %}

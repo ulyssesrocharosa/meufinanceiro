@@ -152,6 +152,8 @@ class Profile(Base):
     theme: Mapped[str] = mapped_column(String(10), default="light")
     whatsapp_phone: Mapped[str] = mapped_column(String(20), nullable=True)
     whatsapp_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    notif_bill_hour: Mapped[int] = mapped_column(Integer, default=8)
+    notif_budget_hour: Mapped[int] = mapped_column(Integer, default=9)
 
     user = relationship("User", back_populates="profile")
 

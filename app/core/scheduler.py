@@ -1,5 +1,5 @@
 import asyncio
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -15,9 +15,10 @@ scheduler = BackgroundScheduler()
 
 
 def check_bill_reminders() -> None:
-    """Create notifications (and optionally send WhatsApp) for bills due within 7 days."""
+    """Roda a cada hora; envia lembretes apenas para usuários cuja hora configurada bate."""
     db = SessionLocal()
     try:
+        current_hour = datetime.now().hour
         today = date.today()
         bills = db.query(RecurringBill).filter(
             RecurringBill.is_active == True,
@@ -26,6 +27,9 @@ def check_bill_reminders() -> None:
         for bill in bills:
             user = db.query(User).filter_by(id=bill.user_id).first()
             if not user:
+                continue
+            bill_hour = (user.profile.notif_bill_hour if user.profile else 8)
+            if current_hour != bill_hour:
                 continue
             days_left = (bill.next_occurrence - today).days
             msg = (
@@ -50,15 +54,22 @@ def check_bill_reminders() -> None:
 
 
 def check_budget_alerts() -> None:
-    """Create notifications (and optionally send WhatsApp) when a budget exceeds 80%."""
+    """Roda a cada hora; envia alertas apenas para usuários cuja hora configurada bate."""
     db = SessionLocal()
     try:
+        current_hour = datetime.now().hour
         today = date.today()
         budgets = db.query(Budget).filter(
             Budget.start_date <= today,
             Budget.end_date >= today,
         ).all()
         for budget in budgets:
+            user = db.query(User).filter_by(id=budget.user_id).first()
+            if not user:
+                continue
+            budget_hour = (user.profile.notif_budget_hour if user.profile else 9)
+            if current_hour != budget_hour:
+                continue
             spent = db.query(func.sum(Transaction.amount)).filter(
                 Transaction.user_id == budget.user_id,
                 Transaction.category_id == budget.category_id,
@@ -68,9 +79,6 @@ def check_budget_alerts() -> None:
             ).scalar() or 0.0
             pct = (spent / budget.amount * 100) if budget.amount > 0 else 0
             if pct < 80:
-                continue
-            user = db.query(User).filter_by(id=budget.user_id).first()
-            if not user:
                 continue
             msg = (
                 f"🔴 Orçamento *{budget.category.name}*: {pct:.0f}% utilizado "
@@ -99,7 +107,8 @@ async def _send_wp(phone: str, msg: str) -> None:
 
 
 def start_scheduler() -> None:
-    scheduler.add_job(check_bill_reminders, CronTrigger(hour=8, minute=0))
-    scheduler.add_job(check_budget_alerts, CronTrigger(hour=9, minute=0))
+    # Roda a cada hora no minuto 0 — cada job filtra pelo horário do usuário
+    scheduler.add_job(check_bill_reminders, CronTrigger(minute=0))
+    scheduler.add_job(check_budget_alerts, CronTrigger(minute=0))
     if not scheduler.running:
         scheduler.start()
