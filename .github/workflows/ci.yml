@@ -31,6 +31,11 @@ jobs:
           ADMIN_PASSWORD: testpassword123
         run: pytest tests/ -v
 
+      - name: Validar migrations
+        env:
+          DATABASE_URL: sqlite:///./data/ci.db
+        run: python scripts/migrate.py
+
   docker-build:
     name: Validar build Docker
     runs-on: ubuntu-latest
@@ -41,6 +46,19 @@ jobs:
 
       - name: Build da imagem
         run: docker build -t meufinanceiro:ci .
+
+      - name: Validar inicialização da imagem
+        run: |
+          docker run -d --name meufinanceiro-ci \
+            -e APP_ENV=production \
+            -e SECRET_KEY=ci-test-secret-key-with-at-least-32-characters \
+            -e ADMIN_EMAIL=admin@test.com \
+            -e ADMIN_PASSWORD=testpassword123 \
+            -e RUN_SCHEDULER=false \
+            -p 8000:8000 meufinanceiro:ci
+          sleep 8
+          curl -f http://localhost:8000/healthz
+          docker stop meufinanceiro-ci
 
   docker-push:
     name: Publicar imagem no GHCR
@@ -65,7 +83,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/ulyssesrocharosa/financeiropython
+          images: ghcr.io/ulyssesrocharosa/meufinanceiro
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=semver,pattern={{raw}}

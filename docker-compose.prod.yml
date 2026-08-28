@@ -1,0 +1,20 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: meufinanceiro:latest
+    env_file: .env
+    environment:
+      APP_ENV: production
+      SESSION_HTTPS_ONLY: "true"
+      RUN_SCHEDULER: "true"
+      DATABASE_URL: sqlite:////app/data/financas.db
+    ports:
+      - "8000:8000"
+    volumes:
+      - financas_data:/app/data
+    restart: unless-stopped
+
+volumes:
+  financas_data:

@@ -23,6 +23,8 @@ def admin_index(
     user: User = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
+    if len(password) < 12:
+        return RedirectResponse("/admin/users/new?error=Senha deve ter ao menos 12 caracteres", status_code=302)
     users = db.query(User).order_by(User.created_at.desc()).all()
     return templates.TemplateResponse(
         "admin/index.html",
@@ -96,9 +98,9 @@ def reset_password(
     target = db.query(User).filter_by(id=user_id).first()
     if not target:
         return RedirectResponse("/admin?error=Usuário não encontrado", status_code=302)
-    if len(new_password) < 6:
+    if len(new_password) < 12:
         return RedirectResponse(
-            "/admin?error=Senha deve ter ao menos 6 caracteres", status_code=302
+            "/admin?error=Senha deve ter ao menos 12 caracteres", status_code=302
         )
     target.password_hash = hash_password(new_password)
     db.commit()

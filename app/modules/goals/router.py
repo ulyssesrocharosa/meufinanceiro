@@ -1,4 +1,5 @@
 from datetime import date
+from decimal import Decimal
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Form, Request
@@ -8,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.core.auth import get_current_user
 from app.core.database import get_db
+from app.core.ownership import owned_account
 from app.models.models import Account, Goal, GoalPriority, Notification, User
 
 router = APIRouter(prefix="/goals", tags=["goals"])
@@ -63,19 +65,21 @@ def new_goal_form(
 @router.post("")
 def create_goal(
     name: str = Form(...),
-    target_amount: float = Form(...),
-    current_amount: float = Form(0.0),
+    target_amount: Decimal = Form(...),
+    current_amount: Decimal = Form(Decimal("0.00")),
     target_date: str = Form(...),
     priority: str = Form("medium"),
     account_id: Optional[int] = Form(None),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    if account_id and not owned_account(db, user.id, account_id):
+        return RedirectResponse("/goals/new?error=Conta inválida", status_code=302)
     goal = Goal(
         user_id=user.id,
         name=name.strip(),
         target_amount=abs(target_amount),
-        current_amount=max(0.0, current_amount),
+        current_amount=max(Decimal("0.00"), current_amount),
         target_date=date.fromisoformat(target_date),
         priority=GoalPriority(priority),
         account_id=account_id or None,
@@ -109,8 +113,8 @@ def edit_goal_form(
 def update_goal(
     goal_id: int,
     name: str = Form(...),
-    target_amount: float = Form(...),
-    current_amount: float = Form(0.0),
+    target_amount: Decimal = Form(...),
+    current_amount: Decimal = Form(Decimal("0.00")),
     target_date: str = Form(...),
     priority: str = Form("medium"),
     account_id: Optional[int] = Form(None),
@@ -120,9 +124,11 @@ def update_goal(
     goal = db.query(Goal).filter_by(id=goal_id, user_id=user.id).first()
     if not goal:
         return RedirectResponse("/goals?error=Meta não encontrada", status_code=302)
+    if account_id and not owned_account(db, user.id, account_id):
+        return RedirectResponse(f"/goals/{goal_id}/edit?error=Conta inválida", status_code=302)
     goal.name = name.strip()
     goal.target_amount = abs(target_amount)
-    goal.current_amount = max(0.0, current_amount)
+    goal.current_amount = max(Decimal("0.00"), current_amount)
     goal.target_date = date.fromisoformat(target_date)
     goal.priority = GoalPriority(priority)
     goal.account_id = account_id or None
@@ -133,7 +139,7 @@ def update_goal(
 @router.post("/{goal_id}/contribute")
 def contribute_to_goal(
     goal_id: int,
-    amount: float = Form(...),
+    amount: Decimal = Form(...),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):

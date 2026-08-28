@@ -1,4 +1,5 @@
 from datetime import date
+from decimal import Decimal
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Form, Request
@@ -60,7 +61,7 @@ def create_account(
     request: Request,
     name: str = Form(...),
     type: str = Form(...),
-    balance: float = Form(0.0),
+    balance: Decimal = Form(Decimal("0.00")),
     institution: Optional[str] = Form(None),
     account_number: Optional[str] = Form(None),
     color: str = Form("#3B82F6"),
@@ -162,7 +163,7 @@ def transfer_form(
 def do_transfer(
     account_id: int,
     to_account_id: int = Form(...),
-    amount: float = Form(...),
+    amount: Decimal = Form(...),
     description: Optional[str] = Form(None),
     transfer_date: str = Form(...),
     user: User = Depends(get_current_user),

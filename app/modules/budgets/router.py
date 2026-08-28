@@ -1,4 +1,5 @@
 from datetime import date
+from decimal import Decimal
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Form, Request
@@ -9,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.core.auth import get_current_user
 from app.core.database import get_db
+from app.core.ownership import available_category
 from app.models.models import (
     Budget, BudgetPeriod, Category, Notification,
     Transaction, TransactionStatus, TransactionType, User,
@@ -23,7 +25,7 @@ def _ctx(request: Request, user: User, db: Session) -> dict:
     return {"request": request, "user": user, "unread_count": unread}
 
 
-def _calc_spent(budget: Budget, db: Session) -> float:
+def _calc_spent(budget: Budget, db: Session) -> Decimal:
     return db.query(func.sum(Transaction.amount)).filter(
         Transaction.user_id == budget.user_id,
         Transaction.category_id == budget.category_id,
@@ -31,7 +33,7 @@ def _calc_spent(budget: Budget, db: Session) -> float:
         Transaction.status == TransactionStatus.completed,
         Transaction.date >= budget.start_date,
         Transaction.date <= budget.end_date,
-    ).scalar() or 0.0
+    ).scalar() or Decimal("0.00")
 
 
 @router.get("", response_class=HTMLResponse)
@@ -83,7 +85,7 @@ def new_budget_form(
 @router.post("")
 def create_budget(
     category_id: int = Form(...),
-    amount: float = Form(...),
+    amount: Decimal = Form(...),
     period: str = Form(...),
     start_date: str = Form(...),
     end_date: str = Form(...),
@@ -94,6 +96,8 @@ def create_budget(
     ed = date.fromisoformat(end_date)
     if ed <= sd:
         return RedirectResponse("/budgets/new?error=Data fim deve ser após data início", status_code=302)
+    if not available_category(db, user.id, category_id):
+        return RedirectResponse("/budgets/new?error=Categoria inválida", status_code=302)
     budget = Budget(
         user_id=user.id,
         category_id=category_id,
@@ -135,7 +139,7 @@ def edit_budget_form(
 def update_budget(
     budget_id: int,
     category_id: int = Form(...),
-    amount: float = Form(...),
+    amount: Decimal = Form(...),
     period: str = Form(...),
     start_date: str = Form(...),
     end_date: str = Form(...),
@@ -145,6 +149,10 @@ def update_budget(
     budget = db.query(Budget).filter_by(id=budget_id, user_id=user.id).first()
     if not budget:
         return RedirectResponse("/budgets?error=Não encontrado", status_code=302)
+    if date.fromisoformat(end_date) <= date.fromisoformat(start_date):
+        return RedirectResponse("/budgets?error=Data fim deve ser após data início", status_code=302)
+    if not available_category(db, user.id, category_id):
+        return RedirectResponse("/budgets?error=Categoria inválida", status_code=302)
     budget.category_id = category_id
     budget.amount = abs(amount)
     budget.period = BudgetPeriod(period)

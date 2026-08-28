@@ -1,10 +1,13 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Request
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
-from app.core.config import settings
+from app.core.config import settings, validate_runtime_settings
 from app.core.auth import AuthRedirect
+from app.core.csrf import SameOriginMiddleware
 
 # Routers
 from app.modules.auth.router import router as auth_router
@@ -22,13 +25,28 @@ from app.modules.notifications.router import router as notifications_router
 from app.modules.settings.router import router as settings_router
 from app.modules.admin.router import router as admin_router
 
-app = FastAPI(title="Minhas Finanças", docs_url=None, redoc_url=None)
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    validate_runtime_settings()
+    if settings.run_scheduler:
+        from app.core.scheduler import start_scheduler, stop_scheduler
+        start_scheduler()
+        yield
+        stop_scheduler()
+    else:
+        yield
+
+
+app = FastAPI(title="Minhas Finanças", docs_url=None, redoc_url=None, lifespan=lifespan)
 
 app.add_middleware(
     SessionMiddleware,
     secret_key=settings.secret_key,
     max_age=60 * 60 * 24 * 30,  # 30 dias
+    same_site="strict",
+    https_only=settings.session_https_only or settings.app_env.lower() == "production",
 )
+app.add_middleware(SameOriginMiddleware)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -54,7 +72,14 @@ async def auth_redirect_handler(request: Request, exc: AuthRedirect):
     return RedirectResponse(exc.url, status_code=302)
 
 
-@app.on_event("startup")
-async def startup():
-    from app.core.scheduler import start_scheduler
-    start_scheduler()
+@app.get("/healthz", include_in_schema=False)
+def healthcheck():
+    from sqlalchemy import text
+    from app.core.database import SessionLocal
+
+    db = SessionLocal()
+    try:
+        db.execute(text("SELECT 1"))
+    finally:
+        db.close()
+    return {"status": "ok"}

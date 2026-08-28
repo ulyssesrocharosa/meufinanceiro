@@ -5,9 +5,11 @@ from sqlalchemy.pool import StaticPool
 from sqlalchemy.orm import sessionmaker
 
 from app.core.database import Base, get_db
+from app.core.config import settings
 from app.main import app
 
 SQLALCHEMY_TEST_URL = "sqlite:///:memory:"
+settings.run_scheduler = False
 engine = create_engine(
     SQLALCHEMY_TEST_URL,
     connect_args={"check_same_thread": False},

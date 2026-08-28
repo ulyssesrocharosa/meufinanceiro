@@ -1,4 +1,5 @@
 from datetime import date
+from decimal import Decimal
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Form, Request
@@ -65,9 +66,9 @@ def new_debt_form(
 @router.post("")
 def create_debt(
     name: str = Form(...),
-    original_amount: float = Form(...),
-    current_amount: Optional[float] = Form(None),
-    interest_rate: float = Form(0.0),
+    original_amount: Decimal = Form(...),
+    current_amount: Optional[Decimal] = Form(None),
+    interest_rate: Decimal = Form(Decimal("0.0000")),
     type: Optional[str] = Form(None),
     due_date: Optional[str] = Form(None),
     status: str = Form("active"),
@@ -81,7 +82,7 @@ def create_debt(
         name=name.strip(),
         original_amount=orig,
         current_amount=min(curr, orig),
-        interest_rate=max(0.0, interest_rate),
+        interest_rate=max(Decimal("0.0000"), interest_rate),
         type=DebtType(type) if type else None,
         due_date=date.fromisoformat(due_date) if due_date else None,
         status=DebtStatus(status),
@@ -114,9 +115,9 @@ def edit_debt_form(
 def update_debt(
     debt_id: int,
     name: str = Form(...),
-    original_amount: float = Form(...),
-    current_amount: float = Form(...),
-    interest_rate: float = Form(0.0),
+    original_amount: Decimal = Form(...),
+    current_amount: Decimal = Form(...),
+    interest_rate: Decimal = Form(Decimal("0.0000")),
     type: Optional[str] = Form(None),
     due_date: Optional[str] = Form(None),
     status: str = Form("active"),
@@ -130,7 +131,7 @@ def update_debt(
     debt.name = name.strip()
     debt.original_amount = orig
     debt.current_amount = min(abs(current_amount), orig)
-    debt.interest_rate = max(0.0, interest_rate)
+    debt.interest_rate = max(Decimal("0.0000"), interest_rate)
     debt.type = DebtType(type) if type else None
     debt.due_date = date.fromisoformat(due_date) if due_date else None
     debt.status = DebtStatus(status)

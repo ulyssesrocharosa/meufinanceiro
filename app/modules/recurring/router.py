@@ -1,4 +1,5 @@
 from datetime import date
+from decimal import Decimal
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Form, Request
@@ -8,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.core.auth import get_current_user
 from app.core.database import get_db
+from app.core.ownership import available_category
 from app.models.models import (
     Account, Category, Notification, RecurringBill, RecurringFrequency,
     Transaction, TransactionStatus, TransactionType, User,
@@ -66,7 +68,7 @@ def new_recurring_form(
 @router.post("")
 def create_recurring(
     name: str = Form(...),
-    amount: float = Form(...),
+    amount: Decimal = Form(...),
     frequency: str = Form(...),
     start_date: str = Form(...),
     end_date: Optional[str] = Form(None),
@@ -76,6 +78,8 @@ def create_recurring(
     db: Session = Depends(get_db),
 ):
     sd = date.fromisoformat(start_date)
+    if category_id and not available_category(db, user.id, category_id):
+        return RedirectResponse("/recurring/new?error=Categoria inválida", status_code=302)
     bill = RecurringBill(
         user_id=user.id,
         name=name.strip(),
@@ -121,7 +125,7 @@ def edit_recurring_form(
 def update_recurring(
     bill_id: int,
     name: str = Form(...),
-    amount: float = Form(...),
+    amount: Decimal = Form(...),
     frequency: str = Form(...),
     start_date: str = Form(...),
     end_date: Optional[str] = Form(None),
@@ -133,6 +137,8 @@ def update_recurring(
     bill = db.query(RecurringBill).filter_by(id=bill_id, user_id=user.id).first()
     if not bill:
         return RedirectResponse("/recurring?error=Não encontrado", status_code=302)
+    if category_id and not available_category(db, user.id, category_id):
+        return RedirectResponse(f"/recurring/{bill_id}/edit?error=Categoria inválida", status_code=302)
     bill.name = name.strip()
     bill.amount = abs(amount)
     bill.frequency = RecurringFrequency(frequency)

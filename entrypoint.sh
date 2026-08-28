@@ -1,8 +1,6 @@
 #!/bin/sh
-set -e
+set -eu
 
-echo "Inicializando banco de dados..."
+python scripts/migrate.py
 python scripts/seed.py
-
-echo "Iniciando servidor..."
-exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2
+exec "$@"

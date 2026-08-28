@@ -1,8 +1,9 @@
 from datetime import datetime, date
+from decimal import Decimal
 import enum
 
 from sqlalchemy import (
-    Integer, String, Boolean, Float, Date, DateTime,
+    Integer, String, Boolean, Numeric, Date, DateTime,
     ForeignKey, Text, Enum as SAEnum, Table, Column,
 )
 from sqlalchemy.orm import relationship, Mapped, mapped_column
@@ -165,7 +166,7 @@ class Account(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     type: Mapped[AccountType] = mapped_column(SAEnum(AccountType))
-    balance: Mapped[float] = mapped_column(Float, default=0.0)
+    balance: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=Decimal("0.00"))
     currency: Mapped[str] = mapped_column(String(3), default="BRL")
     institution: Mapped[str] = mapped_column(String(100), nullable=True)
     account_number: Mapped[str] = mapped_column(String(50), nullable=True)
@@ -209,7 +210,7 @@ class Transaction(Base):
     account_id: Mapped[int] = mapped_column(ForeignKey("accounts.id", ondelete="CASCADE"))
     category_id: Mapped[int] = mapped_column(ForeignKey("categories.id", ondelete="SET NULL"), nullable=True)
     recurring_bill_id: Mapped[int] = mapped_column(ForeignKey("recurring_bills.id", ondelete="SET NULL"), nullable=True)
-    amount: Mapped[float] = mapped_column(Float, nullable=False)
+    amount: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False)
     type: Mapped[TransactionType] = mapped_column(SAEnum(TransactionType))
     description: Mapped[str] = mapped_column(Text, nullable=True)
     date: Mapped[date] = mapped_column(Date, nullable=False)
@@ -245,7 +246,7 @@ class RecurringBill(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     category_id: Mapped[int] = mapped_column(ForeignKey("categories.id", ondelete="SET NULL"), nullable=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
-    amount: Mapped[float] = mapped_column(Float, nullable=False)
+    amount: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False)
     frequency: Mapped[RecurringFrequency] = mapped_column(SAEnum(RecurringFrequency))
     start_date: Mapped[date] = mapped_column(Date, nullable=False)
     end_date: Mapped[date] = mapped_column(Date, nullable=True)
@@ -265,7 +266,7 @@ class Budget(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     category_id: Mapped[int] = mapped_column(ForeignKey("categories.id", ondelete="CASCADE"))
-    amount: Mapped[float] = mapped_column(Float, nullable=False)
+    amount: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False)
     period: Mapped[BudgetPeriod] = mapped_column(SAEnum(BudgetPeriod))
     start_date: Mapped[date] = mapped_column(Date, nullable=False)
     end_date: Mapped[date] = mapped_column(Date, nullable=False)
@@ -282,8 +283,8 @@ class Goal(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     account_id: Mapped[int] = mapped_column(ForeignKey("accounts.id", ondelete="SET NULL"), nullable=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
-    target_amount: Mapped[float] = mapped_column(Float, nullable=False)
-    current_amount: Mapped[float] = mapped_column(Float, default=0.0)
+    target_amount: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False)
+    current_amount: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=Decimal("0.00"))
     target_date: Mapped[date] = mapped_column(Date, nullable=False)
     priority: Mapped[GoalPriority] = mapped_column(SAEnum(GoalPriority), default=GoalPriority.medium)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
@@ -299,9 +300,9 @@ class Debt(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     name: Mapped[str] = mapped_column(String(100), nullable=False)
-    original_amount: Mapped[float] = mapped_column(Float, nullable=False)
-    current_amount: Mapped[float] = mapped_column(Float, nullable=False)
-    interest_rate: Mapped[float] = mapped_column(Float, default=0.0)
+    original_amount: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False)
+    current_amount: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False)
+    interest_rate: Mapped[Decimal] = mapped_column(Numeric(7, 4), default=Decimal("0.0000"))
     type: Mapped[DebtType] = mapped_column(SAEnum(DebtType), nullable=True)
     due_date: Mapped[date] = mapped_column(Date, nullable=True)
     status: Mapped[DebtStatus] = mapped_column(SAEnum(DebtStatus), default=DebtStatus.active)
@@ -318,8 +319,8 @@ class Investment(Base):
     account_id: Mapped[int] = mapped_column(ForeignKey("accounts.id", ondelete="CASCADE"))
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     type: Mapped[InvestmentType] = mapped_column(SAEnum(InvestmentType), nullable=True)
-    amount: Mapped[float] = mapped_column(Float, nullable=False)
-    current_value: Mapped[float] = mapped_column(Float, nullable=True)
+    amount: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False)
+    current_value: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=True)
     purchase_date: Mapped[date] = mapped_column(Date, nullable=False)
     risk_level: Mapped[RiskLevel] = mapped_column(SAEnum(RiskLevel), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
@@ -339,6 +340,7 @@ class Notification(Base):
     message: Mapped[str] = mapped_column(Text, nullable=False)
     is_read: Mapped[bool] = mapped_column(Boolean, default=False)
     scheduled_for: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    dedupe_key: Mapped[str] = mapped_column(String(180), unique=True, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", back_populates="notifications")

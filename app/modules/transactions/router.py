@@ -1,4 +1,5 @@
 from datetime import date
+from decimal import Decimal
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Form, Query, Request
@@ -8,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.core.auth import get_current_user
 from app.core.database import get_db
+from app.core.ownership import available_category, owned_account
 from app.models.models import (
     Account, Category, CategoryType, Notification, Transaction,
     TransactionStatus, TransactionType, User,
@@ -110,7 +112,7 @@ def new_transaction_form(
 def create_transaction(
     request: Request,
     account_id: int = Form(...),
-    amount: float = Form(...),
+    amount: Decimal = Form(...),
     type: str = Form(...),
     description: Optional[str] = Form(None),
     transaction_date: str = Form(...),
@@ -120,9 +122,11 @@ def create_transaction(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    account = db.query(Account).filter_by(id=account_id, user_id=user.id).first()
+    account = owned_account(db, user.id, account_id)
     if not account:
         return RedirectResponse("/transactions?error=Conta inválida", status_code=302)
+    if category_id and not available_category(db, user.id, category_id):
+        return RedirectResponse("/transactions?error=Categoria inválida", status_code=302)
 
     t = Transaction(
         user_id=user.id,
@@ -173,7 +177,7 @@ def edit_transaction_form(
 def update_transaction(
     tid: int,
     account_id: int = Form(...),
-    amount: float = Form(...),
+    amount: Decimal = Form(...),
     type: str = Form(...),
     description: Optional[str] = Form(None),
     transaction_date: str = Form(...),
@@ -187,10 +191,12 @@ def update_transaction(
     if not t:
         return RedirectResponse("/transactions?error=Transação não encontrada", status_code=302)
 
-    old_account = db.query(Account).filter_by(id=t.account_id, user_id=user.id).first()
-    new_account = db.query(Account).filter_by(id=account_id, user_id=user.id).first()
+    old_account = owned_account(db, user.id, t.account_id)
+    new_account = owned_account(db, user.id, account_id)
     if not new_account:
         return RedirectResponse("/transactions?error=Conta inválida", status_code=302)
+    if category_id and not available_category(db, user.id, category_id):
+        return RedirectResponse("/transactions?error=Categoria inválida", status_code=302)
 
     # Reverter efeito antigo
     if t.status == TransactionStatus.completed and old_account:
@@ -224,7 +230,7 @@ def delete_transaction(
     if not t:
         return RedirectResponse("/transactions?error=Transação não encontrada", status_code=302)
 
-    account = db.query(Account).filter_by(id=t.account_id, user_id=user.id).first()
+    account = owned_account(db, user.id, t.account_id)
     if t.status == TransactionStatus.completed and account:
         apply_to_balance(account, t.amount, t.type, reverse=True)
 

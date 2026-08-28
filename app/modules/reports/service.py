@@ -1,10 +1,11 @@
 import calendar
 from datetime import date, timedelta
+from decimal import Decimal
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from app.models.models import Account, Category, Debt, Investment, Transaction, TransactionType
+from app.models.models import Account, Category, Debt, Investment, Transaction, TransactionStatus, TransactionType
 
 
 def monthly_summary(user_id: int, year: int, month: int, db: Session) -> dict:
@@ -17,11 +18,12 @@ def monthly_summary(user_id: int, year: int, month: int, db: Session) -> dict:
         .filter(
             Transaction.user_id == user_id,
             Transaction.type == TransactionType.income,
+            Transaction.status == TransactionStatus.completed,
             Transaction.date >= start,
             Transaction.date <= end,
         )
         .scalar()
-        or 0.0
+        or Decimal("0.00")
     )
 
     expense = (
@@ -29,11 +31,12 @@ def monthly_summary(user_id: int, year: int, month: int, db: Session) -> dict:
         .filter(
             Transaction.user_id == user_id,
             Transaction.type == TransactionType.expense,
+            Transaction.status == TransactionStatus.completed,
             Transaction.date >= start,
             Transaction.date <= end,
         )
         .scalar()
-        or 0.0
+        or Decimal("0.00")
     )
 
     transactions = (
@@ -68,6 +71,7 @@ def spending_by_category(user_id: int, start: date, end: date, db: Session) -> l
         .filter(
             Transaction.user_id == user_id,
             Transaction.type == TransactionType.expense,
+            Transaction.status == TransactionStatus.completed,
             Transaction.date >= start,
             Transaction.date <= end,
         )
@@ -75,7 +79,7 @@ def spending_by_category(user_id: int, start: date, end: date, db: Session) -> l
         .order_by(func.sum(Transaction.amount).desc())
         .all()
     )
-    return [{"name": r.name, "color": r.color, "total": r.total} for r in rows]
+    return [{"name": r.name, "color": r.color, "total": float(r.total)} for r in rows]
 
 
 def income_vs_expense(user_id: int, months: int, db: Session) -> list:
@@ -99,11 +103,12 @@ def income_vs_expense(user_id: int, months: int, db: Session) -> list:
             .filter(
                 Transaction.user_id == user_id,
                 Transaction.type == TransactionType.income,
+                Transaction.status == TransactionStatus.completed,
                 Transaction.date >= start,
                 Transaction.date <= end,
             )
             .scalar()
-            or 0.0
+            or Decimal("0.00")
         )
 
         exp = (
@@ -111,14 +116,15 @@ def income_vs_expense(user_id: int, months: int, db: Session) -> list:
             .filter(
                 Transaction.user_id == user_id,
                 Transaction.type == TransactionType.expense,
+                Transaction.status == TransactionStatus.completed,
                 Transaction.date >= start,
                 Transaction.date <= end,
             )
             .scalar()
-            or 0.0
+            or Decimal("0.00")
         )
 
-        result.append({"month": start.strftime("%b/%y"), "income": inc, "expense": exp})
+        result.append({"month": start.strftime("%b/%y"), "income": float(inc), "expense": float(exp)})
 
     return result
 

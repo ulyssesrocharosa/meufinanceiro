@@ -54,6 +54,21 @@ def save_settings(
     return RedirectResponse("/settings?success=Configurações salvas com sucesso", status_code=303)
 
 
+@router.post("/theme")
+def save_theme(
+    theme: str = Form(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    profile = db.query(Profile).filter_by(user_id=user.id).first()
+    if not profile:
+        profile = Profile(user_id=user.id)
+        db.add(profile)
+    profile.theme = theme if theme in ("light", "dark") else "light"
+    db.commit()
+    return {"ok": True}
+
+
 @router.post("/test-whatsapp")
 async def test_whatsapp(user: User = Depends(get_current_user)):
     """Verifica o status da instância Evolution API."""

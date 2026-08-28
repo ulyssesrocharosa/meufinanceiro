@@ -1,4 +1,5 @@
 from datetime import date
+from decimal import Decimal
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Form, Request
@@ -8,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.core.auth import get_current_user
 from app.core.database import get_db
+from app.core.ownership import owned_account
 from app.models.models import Account, Investment, InvestmentType, Notification, RiskLevel, User
 
 router = APIRouter(prefix="/investments", tags=["investments"])
@@ -74,13 +76,15 @@ def create_investment(
     name: str = Form(...),
     account_id: int = Form(...),
     type: Optional[str] = Form(None),
-    amount: float = Form(...),
-    current_value: Optional[float] = Form(None),
+    amount: Decimal = Form(...),
+    current_value: Optional[Decimal] = Form(None),
     purchase_date: str = Form(...),
     risk_level: Optional[str] = Form(None),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    if not owned_account(db, user.id, account_id):
+        return RedirectResponse("/investments/new?error=Conta inválida", status_code=302)
     inv = Investment(
         user_id=user.id,
         account_id=account_id,
@@ -123,8 +127,8 @@ def update_investment(
     name: str = Form(...),
     account_id: int = Form(...),
     type: Optional[str] = Form(None),
-    amount: float = Form(...),
-    current_value: Optional[float] = Form(None),
+    amount: Decimal = Form(...),
+    current_value: Optional[Decimal] = Form(None),
     purchase_date: str = Form(...),
     risk_level: Optional[str] = Form(None),
     user: User = Depends(get_current_user),
@@ -133,6 +137,8 @@ def update_investment(
     inv = db.query(Investment).filter_by(id=inv_id, user_id=user.id).first()
     if not inv:
         return RedirectResponse("/investments?error=Não encontrado", status_code=302)
+    if not owned_account(db, user.id, account_id):
+        return RedirectResponse(f"/investments/{inv_id}/edit?error=Conta inválida", status_code=302)
     inv.name = name.strip()
     inv.account_id = account_id
     inv.type = InvestmentType(type) if type else None

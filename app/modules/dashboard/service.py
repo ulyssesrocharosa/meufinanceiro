@@ -1,4 +1,5 @@
 from datetime import date, timedelta
+from decimal import Decimal
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -14,14 +15,14 @@ def get_dashboard_data(user_id: int, db: Session) -> dict:
     first_day = today.replace(day=1)
 
     # KPIs do mês atual
-    def _sum(ttype: TransactionType, start: date, end: date) -> float:
+    def _sum(ttype: TransactionType, start: date, end: date) -> Decimal:
         return db.query(func.sum(Transaction.amount)).filter(
             Transaction.user_id == user_id,
             Transaction.type == ttype,
             Transaction.status == TransactionStatus.completed,
             Transaction.date >= start,
             Transaction.date <= end,
-        ).scalar() or 0.0
+        ).scalar() or Decimal("0.00")
 
     month_income = _sum(TransactionType.income, first_day, today)
     month_expense = _sum(TransactionType.expense, first_day, today)
@@ -29,7 +30,7 @@ def get_dashboard_data(user_id: int, db: Session) -> dict:
     total_balance = db.query(func.sum(Account.balance)).filter(
         Account.user_id == user_id,
         Account.is_active == True,
-    ).scalar() or 0.0
+    ).scalar() or Decimal("0.00")
 
     # Últimas 10 transações
     recent = (
@@ -105,7 +106,14 @@ def get_dashboard_data(user_id: int, db: Session) -> dict:
     )
     budgets_with_spent = []
     for b in active_budgets:
-        spent = _sum(TransactionType.expense, b.start_date, b.end_date)
+        spent = db.query(func.sum(Transaction.amount)).filter(
+            Transaction.user_id == user_id,
+            Transaction.category_id == b.category_id,
+            Transaction.type == TransactionType.expense,
+            Transaction.status == TransactionStatus.completed,
+            Transaction.date >= b.start_date,
+            Transaction.date <= b.end_date,
+        ).scalar() or Decimal("0.00")
         pct = min(100, round(spent / b.amount * 100, 1)) if b.amount > 0 else 0
         budgets_with_spent.append({"budget": b, "spent": spent, "pct": pct})
 
@@ -117,8 +125,8 @@ def get_dashboard_data(user_id: int, db: Session) -> dict:
         "recent_transactions": recent,
         "upcoming_bills": upcoming,
         "months_labels": months_labels,
-        "months_income": months_income,
-        "months_expense": months_expense,
+        "months_income": [float(value) for value in months_income],
+        "months_expense": [float(value) for value in months_expense],
         "cat_names": [c.name for c in cat_data],
         "cat_colors": [c.color for c in cat_data],
         "cat_totals": [float(c.total) for c in cat_data],

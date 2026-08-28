@@ -9,7 +9,7 @@ from sqlalchemy import func
 from app.core.database import SessionLocal
 from app.models.models import (
     Budget, Notification, NotificationType, RecurringBill,
-    Transaction, TransactionType, User,
+    Transaction, TransactionStatus, TransactionType, User,
 )
 
 scheduler = BackgroundScheduler()
@@ -38,6 +38,9 @@ def check_and_notify() -> None:
             if current_hour != bill_hour:
                 continue
             days_left = (bill.next_occurrence - today).days
+            dedupe_key = f"bill:{bill.id}:{bill.next_occurrence.isoformat()}"
+            if db.query(Notification.id).filter_by(dedupe_key=dedupe_key).first():
+                continue
             line = f"⚠️ *{bill.name}* vence em {days_left} dia(s) — R$ {bill.amount:.2f}"
             alerts[user.id]["user"] = user
             alerts[user.id]["lines"].append(line)
@@ -46,6 +49,7 @@ def check_and_notify() -> None:
                 type=NotificationType.bill_reminder,
                 title=f"Conta a vencer: {bill.name}",
                 message=line,
+                dedupe_key=dedupe_key,
             ))
 
         # --- Orçamentos próximos do limite ---
@@ -64,11 +68,15 @@ def check_and_notify() -> None:
                 Transaction.user_id == budget.user_id,
                 Transaction.category_id == budget.category_id,
                 Transaction.type == TransactionType.expense,
+                Transaction.status == TransactionStatus.completed,
                 Transaction.date >= budget.start_date,
                 Transaction.date <= budget.end_date,
-            ).scalar() or 0.0
+            ).scalar() or 0
             pct = (spent / budget.amount * 100) if budget.amount > 0 else 0
             if pct < 80:
+                continue
+            dedupe_key = f"budget:{budget.id}:{budget.end_date.isoformat()}:80"
+            if db.query(Notification.id).filter_by(dedupe_key=dedupe_key).first():
                 continue
             line = (
                 f"🔴 *{budget.category.name}*: {pct:.0f}% utilizado "
@@ -81,6 +89,7 @@ def check_and_notify() -> None:
                 type=NotificationType.budget_alert,
                 title=f"Alerta de orçamento: {budget.category.name}",
                 message=line,
+                dedupe_key=dedupe_key,
             ))
 
         db.commit()
@@ -118,3 +127,8 @@ def start_scheduler() -> None:
         replace_existing=True,
     )
     scheduler.start()
+
+
+def stop_scheduler() -> None:
+    if scheduler.running:
+        scheduler.shutdown(wait=False)

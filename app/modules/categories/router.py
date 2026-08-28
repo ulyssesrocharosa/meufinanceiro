@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.core.auth import get_current_user
 from app.core.database import get_db
+from app.core.ownership import valid_parent_category
 from app.models.models import Category, CategoryType, Notification, User
 
 router = APIRouter(prefix="/categories", tags=["categories"])
@@ -71,6 +72,8 @@ def create_category(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    if parent_id and not valid_parent_category(db, user.id, parent_id):
+        return RedirectResponse("/categories/new?error=Categoria pai inválida", status_code=302)
     cat = Category(
         user_id=user.id,
         name=name.strip(),
@@ -121,6 +124,8 @@ def update_category(
     cat = db.query(Category).filter_by(id=cat_id, user_id=user.id, is_system=False).first()
     if not cat:
         return RedirectResponse("/categories?error=Categoria não encontrada", status_code=302)
+    if parent_id and not valid_parent_category(db, user.id, parent_id, cat_id):
+        return RedirectResponse(f"/categories/{cat_id}/edit?error=Categoria pai inválida", status_code=302)
     cat.name = name.strip()
     cat.type = CategoryType(type)
     cat.icon = icon.strip() or "dollar-sign"
