@@ -45,7 +45,11 @@ def login(
 ):
     key = f"{request.client.host if request.client else 'unknown'}:{email.strip().lower()}"
     if not _can_attempt_login(key):
-        return templates.TemplateResponse("auth/login.html", {"request": request, "error": "Muitas tentativas. Aguarde alguns minutos."}, status_code=429)
+        return templates.TemplateResponse(
+            "auth/login.html",
+            {"request": request, "error": "Muitas tentativas. Aguarde alguns minutos."},
+            status_code=429,
+        )
     user = db.query(User).filter_by(email=email.strip().lower(), is_active=True).first()
     if not user or not verify_password(password, user.password_hash):
         return templates.TemplateResponse(

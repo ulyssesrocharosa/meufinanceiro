@@ -1,4 +1,4 @@
-"""Sincroniza dados padrão depois de `python scripts/migrate.py`."""
+"""Seed idempotente. Rode `alembic upgrade head` antes deste comando."""
 import sys
 import os
 

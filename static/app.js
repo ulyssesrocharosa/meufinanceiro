@@ -8,7 +8,7 @@ function toggleTheme() {
   const html = document.documentElement;
   const isDark = html.classList.toggle('dark');
   // Persiste via POST silencioso
-  fetch('/settings/theme', {
+  fetch('/profile/theme', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: 'theme=' + (isDark ? 'dark' : 'light'),

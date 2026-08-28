@@ -83,7 +83,7 @@ def spending_by_category(user_id: int, start: date, end: date, db: Session) -> l
 
 
 def income_vs_expense(user_id: int, months: int, db: Session) -> list:
-    """Returns list of {month: 'Jan/25', income: float, expense: float} for the last N months"""
+    """Returns values for the last N months using completed transactions only."""
     today = date.today()
     result = []
 

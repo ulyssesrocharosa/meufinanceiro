@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: meufinanceiro:latest
+    image: financeiropython:latest
     env_file: .env
     environment:
       APP_ENV: production

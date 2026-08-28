@@ -24,6 +24,7 @@ settings = Settings()
 
 
 def validate_runtime_settings() -> None:
+    """Reject unsafe settings when the application is exposed publicly."""
     if settings.app_env.lower() != "production":
         return
     if settings.secret_key == "dev-only-secret-change-before-production" or len(settings.secret_key) < 32:

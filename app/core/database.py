@@ -10,6 +10,7 @@ engine = create_engine(
     pool_pre_ping=not is_sqlite,
 )
 
+
 if is_sqlite:
     @event.listens_for(engine, "connect")
     def configure_sqlite_connection(dbapi_connection, _connection_record):

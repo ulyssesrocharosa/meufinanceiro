@@ -24,18 +24,23 @@ SYSTEM_CATEGORIES = [
 
 
 def seed_defaults() -> None:
+    """Create idempotent system data after migrations have been applied."""
     db = SessionLocal()
     try:
         for name, category_type, icon, color in SYSTEM_CATEGORIES:
-            if not db.query(Category).filter_by(name=name, is_system=True).first():
+            exists = db.query(Category).filter_by(name=name, is_system=True).first()
+            if not exists:
                 db.add(Category(name=name, type=category_type, icon=icon, color=color, is_system=True))
+
         if settings.admin_password:
             admin = db.query(User).filter_by(email=settings.admin_email).first()
             if not admin:
                 admin = User(
-                    email=settings.admin_email.lower(), name="Administrador",
+                    email=settings.admin_email.lower(),
+                    name="Administrador",
                     password_hash=hash_password(settings.admin_password),
-                    role=UserRole.admin, is_active=True,
+                    role=UserRole.admin,
+                    is_active=True,
                 )
                 db.add(admin)
                 db.flush()

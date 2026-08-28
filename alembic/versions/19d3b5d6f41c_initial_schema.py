@@ -1,8 +1,8 @@
 """initial_schema
 
-Revision ID: 77fa523a2b5a
+Revision ID: 19d3b5d6f41c
 Revises:
-Create Date: 2026-08-28 16:34:17.979386
+Create Date: 2026-08-28 15:29:06.779495
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '77fa523a2b5a'
+revision: str = '19d3b5d6f41c'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -98,8 +98,6 @@ def upgrade() -> None:
     sa.Column('theme', sa.String(length=10), nullable=False),
     sa.Column('whatsapp_phone', sa.String(length=20), nullable=True),
     sa.Column('whatsapp_enabled', sa.Boolean(), nullable=False),
-    sa.Column('notif_bill_hour', sa.Integer(), nullable=False),
-    sa.Column('notif_budget_hour', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('user_id')

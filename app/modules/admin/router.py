@@ -23,8 +23,6 @@ def admin_index(
     user: User = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
-    if len(password) < 12:
-        return RedirectResponse("/admin/users/new?error=Senha deve ter ao menos 12 caracteres", status_code=302)
     users = db.query(User).order_by(User.created_at.desc()).all()
     return templates.TemplateResponse(
         "admin/index.html",
@@ -53,6 +51,8 @@ def create_user(
     user: User = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
+    if len(password) < 12:
+        return RedirectResponse("/admin/users/new?error=Senha deve ter ao menos 12 caracteres", status_code=302)
     if db.query(User).filter_by(email=email.strip().lower()).first():
         return RedirectResponse("/admin?error=Email já cadastrado", status_code=302)
     new_user = User(
